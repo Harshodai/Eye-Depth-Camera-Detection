@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.env
+venv/
+.venv/
+
+# # Project Specific (Data folders)
+# input/
+# output/
+# failed/
+
+# IDE
+.vscode/
+.idea/
