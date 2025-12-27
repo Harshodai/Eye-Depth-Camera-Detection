@@ -1,128 +1,106 @@
-import {
-    FaceLandmarker,
-    FilesetResolver
-} from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0";
+// popup.js - Simplified & Robust Controller
 
-const video = document.getElementById("webcam");
-const canvasElement = document.getElementById("output_canvas");
-const canvasCtx = canvasElement.getContext("2d");
 const toggleBtn = document.getElementById("toggle-btn");
 const distanceReadout = document.getElementById("distance-readout");
+const distanceUnitLabel = document.getElementById("distance-unit");
 const statusText = document.getElementById("status-text");
-const videoContainer = document.getElementById("video-container");
+const statusBadge = document.getElementById("status-badge");
+const monitorCard = document.getElementById("monitor-card");
 
-let faceLandmarker;
-let runningMode = "VIDEO";
-let lastVideoTime = -1;
-let isMonitoring = false;
+let isMonitoringState = false;
 
-// Constants from Python port
-const INTERPUPILLARY_DISTANCE_CM = 6.3;
-const FOCAL_LENGTH = 1100; // Calibrated for average webcam
-const SAFE_DISTANCE_CM = 76; // 2.5 feet
-
-async function initializeFaceLandmarker() {
-    statusText.innerText = "Checking local resources...";
-
-    // Check if the model is already in the extension folder (fastest)
-    const modelUrl = chrome.runtime.getURL("face_landmarker.task");
-    let modelPath = modelUrl;
-
-    try {
-        const response = await fetch(modelUrl, { method: 'HEAD' });
-        if (!response.ok) {
-            statusText.innerText = "Downloading AI Model (One-time)...";
-            modelPath = "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task";
+// Initial state sync with storage
+if (chrome && chrome.storage && chrome.storage.local) {
+    chrome.storage.local.get(['isMonitoring'], (res) => {
+        if (res.isMonitoring) {
+            isMonitoringState = true;
+            updateToActiveUI();
+        } else {
+            updateToIdleUI();
         }
-    } catch (e) {
-        modelPath = "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task";
-    }
-
-    const filesetResolver = await FilesetResolver.forVisionTasks(
-        "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm"
-    );
-
-    faceLandmarker = await FaceLandmarker.createFromOptions(filesetResolver, {
-        baseOptions: {
-            modelAssetPath: modelPath,
-            delegate: "GPU"
-        },
-        outputFaceBlendshapes: true,
-        runningMode: runningMode,
-        numFaces: 1
     });
-
-    statusText.innerText = "AI Model Ready";
 }
 
-async function predictWebcam() {
-    if (!isMonitoring) return;
+function updateToActiveUI() {
+    toggleBtn.innerText = "Stop Protection";
+    toggleBtn.classList.add("active");
+    statusBadge.classList.add("active");
+    statusText.innerText = "Connecting...";
+}
 
-    if (video.currentTime !== lastVideoTime) {
-        lastVideoTime = video.currentTime;
-        const results = faceLandmarker.detectForVideo(video, Date.now());
+function updateToIdleUI() {
+    toggleBtn.innerText = "Start Protection";
+    toggleBtn.classList.remove("active");
+    statusBadge.classList.remove("active");
+    statusBadge.classList.remove("is-warning");
+    statusText.innerText = "System IDLE";
+    distanceReadout.innerText = "--";
+    distanceUnitLabel.innerText = "Monitoring Off";
+    distanceReadout.style.color = "inherit";
+}
 
-        if (results.faceLandmarks) {
-            for (const landmarks of results.faceLandmarks) {
-                // Indices for irises in Face Landmarker (approximate for pixel distance)
-                // Left iris: 468, Right iris: 473
-                const leftIris = landmarks[468];
-                const rightIris = landmarks[473];
+// Global listener for monitoring updates
+chrome.runtime.onMessage.addListener((msg) => {
+    if (!isMonitoringState) return;
 
-                if (leftIris && rightIris) {
-                    // Calculate pixel distance
-                    const pxDist = Math.sqrt(
-                        Math.pow((leftIris.x - rightIris.x) * video.videoWidth, 2) +
-                        Math.pow((leftIris.y - rightIris.y) * video.videoHeight, 2)
-                    );
+    if (msg.type === "MONITOR_UPDATE") {
+        const { status, distance } = msg;
 
-                    // Triangle Similarity: D = (W * F) / P
-                    const distanceCm = (INTERPUPILLARY_DISTANCE_CM * FOCAL_LENGTH) / pxDist;
-
-                    updateUI(distanceCm);
-                }
-            }
+        // Show distance if it's available
+        if (distance !== null && distance !== undefined) {
+            distanceReadout.innerText = distance;
+            distanceUnitLabel.innerText = "cm to screen";
         }
-    }
-    window.requestAnimationFrame(predictWebcam);
-}
 
-function updateUI(distanceCm) {
-    distanceReadout.innerText = `${distanceCm.toFixed(1)} cm`;
-
-    if (distanceCm < SAFE_DISTANCE_CM) {
-        distanceReadout.classList.add("warning");
-        statusText.innerText = "TOO CLOSE!";
-        statusText.style.color = "#ef4444";
-    } else {
-        distanceReadout.classList.remove("warning");
-        statusText.innerText = "Safe Distance";
-        statusText.style.color = "#22c55e";
+        if (status === "SAFE") {
+            statusText.innerText = "Good";
+            statusBadge.className = "status-badge active";
+            monitorCard.classList.remove("is-warning");
+            distanceReadout.style.color = "#4ade80"; // Bright Green
+        } else if (status.startsWith("WARNING")) {
+            const timeLeft = status.split("|")[1] || "5";
+            statusText.innerText = `Please move back (${timeLeft}s)`;
+            statusBadge.className = "status-badge is-warning";
+            monitorCard.classList.add("is-warning");
+            distanceReadout.style.color = "#f43f5e"; // Rose Red
+        } else if (status === "LOOKING") {
+            statusText.innerText = "Scanning...";
+            statusBadge.className = "status-badge active";
+            distanceReadout.innerText = "--";
+            distanceUnitLabel.innerText = "Finding face";
+            distanceReadout.style.color = "inherit";
+        }
+    } else if (msg.type === "MONITOR_ERROR") {
+        statusText.innerText = "Camera Error";
+        statusBadge.className = "status-badge is-warning";
+        isMonitoringState = false;
+        chrome.storage.local.set({ isMonitoring: false });
+        updateToIdleUI();
     }
-}
+});
 
 toggleBtn.addEventListener("click", async () => {
-    if (isMonitoring) {
-        isMonitoring = false;
-        toggleBtn.innerText = "Start Monitoring";
-        videoContainer.style.display = "none";
-        const stream = video.srcObject;
-        const tracks = stream.getTracks();
-        tracks.forEach(track => track.stop());
+    if (isMonitoringState) {
+        // STOP MONITORING
+        isMonitoringState = false;
+        chrome.storage.local.set({ isMonitoring: false });
+        chrome.runtime.sendMessage({ type: "STOP_MONITORING" });
+        updateToIdleUI();
     } else {
-        if (!faceLandmarker) {
-            statusText.innerText = "Loading AI Model...";
-            await initializeFaceLandmarker();
-        }
+        // START MONITORING
+        try {
+            // Quick permission check before launching offscreen
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            stream.getTracks().forEach(t => t.stop()); // Stop immediately, offscreen will handle it
 
-        navigator.mediaDevices.getUserMedia({ video: true }).then((stream) => {
-            video.srcObject = stream;
-            video.addEventListener("loadeddata", () => {
-                isMonitoring = true;
-                toggleBtn.innerText = "Stop Monitoring";
-                videoContainer.style.display = "block";
-                predictWebcam();
-            });
-        });
+            isMonitoringState = true;
+            chrome.storage.local.set({ isMonitoring: true });
+            chrome.runtime.sendMessage({ type: "START_MONITORING" });
+            updateToActiveUI();
+        } catch (err) {
+            console.error("Permission denied or camera busy:", err);
+            // Open setup page if camera fails
+            chrome.tabs.create({ url: 'setup.html' });
+        }
     }
 });

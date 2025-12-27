@@ -2,133 +2,251 @@
 <html>
 
 <head>
-    <title>Eye Distance Monitor</title>
+    <title>EyeVision Guard</title>
     <style>
-        body {
-            width: 300px;
-            padding: 20px;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #0f172a;
-            color: #f8fafc;
-            margin: 0;
+        :root {
+            --bg-dark: #020617;
+            --card-parent: #0f172a;
+            --primary: #38bdf8;
+            --secondary: #818cf8;
+            --accent-green: #10b981;
+            --accent-red: #f43f5e;
+            --text-main: #f8fafc;
+            --text-dim: #64748b;
         }
 
-        .container {
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body {
+            width: 300px;
+            font-family: 'Inter', -apple-system, system-ui, sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            overflow: hidden;
+        }
+
+        .app-container {
+            padding: 16px;
             display: flex;
             flex-direction: column;
+            gap: 12px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
             align-items: center;
-            gap: 15px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .logo {
+            width: 22px;
+            height: 22px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .logo svg {
+            width: 14px;
+            height: 14px;
+            fill: white;
         }
 
         h1 {
-            font-size: 1.2rem;
-            margin: 0;
-            background: linear-gradient(135deg, #38bdf8, #818cf8);
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: #fff;
         }
 
-        .status-card {
-            background: #1e293b;
-            padding: 15px;
+        .privacy-banner {
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.55rem;
+            color: #4ade80;
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            margin-bottom: 2px;
+            opacity: 0.8;
+            width: fit-content;
+        }
+
+        .privacy-banner svg {
+            min-width: 12px;
+            width: 12px;
+            height: 12px;
+            fill: currentColor;
+        }
+
+        .monitor-display {
+            position: relative;
+            height: 120px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: var(--card-parent);
             border-radius: 12px;
-            width: 100%;
-            text-align: center;
-            border: 1px solid #334155;
+            border: 1px solid rgba(255, 255, 255, 0.05);
         }
 
-        .distance {
-            font-size: 2.5rem;
-            font-weight: bold;
-            margin: 10px 0;
-            color: #22c55e;
+        .distance-value {
+            font-size: 3.5rem;
+            font-weight: 800;
+            line-height: 1;
+            transition: all 0.3s;
         }
 
-        .warning {
-            color: #ef4444 !important;
+        .distance-unit {
+            font-size: 0.65rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-top: 4px;
         }
 
-        button {
-            background: linear-gradient(135deg, #38bdf8, #818cf8);
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 8px;
+        .status-badge {
+            position: absolute;
+            top: 10px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 2px 8px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            font-size: 0.6rem;
             font-weight: 600;
+            color: var(--text-dim);
+        }
+
+        .dot {
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: #475569;
+        }
+
+        .active .dot {
+            background: #10b981;
+            box-shadow: 0 0 5px #10b981;
+        }
+
+        .is-warning .dot {
+            background: var(--accent-red);
+            animation: blink 0.8s infinite;
+        }
+
+        .is-warning .distance-value {
+            color: var(--accent-red);
+            transform: scale(1.1);
+        }
+
+        @keyframes blink {
+            0% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.2;
+            }
+
+            100% {
+                opacity: 1;
+            }
+        }
+
+        #toggle-btn {
+            height: 44px;
+            border: none;
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            font-weight: 700;
+            font-size: 0.9rem;
             cursor: pointer;
-            transition: transform 0.2s, opacity 0.2s;
-            width: 100%;
+            transition: 0.2s;
+            margin-top: 8px;
         }
 
-        button:hover {
-            opacity: 0.9;
-            transform: scale(1.02);
+        #toggle-btn:hover {
+            filter: contrast(1.1) brightness(1.1);
         }
 
-        button:active {
-            transform: scale(0.98);
+        #toggle-btn.active {
+            background: rgba(244, 63, 94, 0.1);
+            color: #f43f5e;
+            border: 1px solid rgba(244, 63, 94, 0.2);
+        }
+
+        .footer {
+            font-size: 0.6rem;
+            color: var(--text-dim);
+            text-align: center;
+            opacity: 0.8;
+            margin-top: 4px;
         }
 
         #video-container {
-            width: 100%;
-            border-radius: 8px;
-            overflow: hidden;
             display: none;
-            position: relative;
-        }
-
-        video {
-            width: 100%;
-            transform: scaleX(-1);
-        }
-
-        canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            transform: scaleX(-1);
-        }
-
-        .settings-link {
-            font-size: 0.8rem;
-            color: #94a3b8;
-            cursor: pointer;
-            text-decoration: underline;
         }
     </style>
 </head>
 
 <body>
-    <div class="container">
-        <h1>Eye Distance Monitor</h1>
-        <div class="status-card">
-            <div id="status-text">Monitoring Paused</div>
-            <div id="distance-readout" class="distance">-- cm</div>
-            <div id="alert-text"></div>
+    <div class="app-container">
+        <div class="header">
+            <div class="brand">
+                <div class="logo">
+                    <svg viewBox="0 0 24 24">
+                        <path
+                            d="M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17M12,4.5C7,4.5 2.73,7.61 1,12C2.73,16.39 7,19.5 12,19.5C17,19.5 21.27,16.39 23,12C21.27,7.61 17,4.5 12,4.5Z" />
+                    </svg>
+                </div>
+                <h1>EyeVision Guard</h1>
+            </div>
         </div>
+
+        <div class="privacy-banner">
+            <svg viewBox="0 0 24 24">
+                <path
+                    d="M12,12A3,3 0 1,0 12,6A3,3 0 1,0 12,12M12,2C6.48,2 2,6.48 2,12s4.48,10 10,10 10-4.48 10-10S17.52,2 12,2zm0 18c-4.41,0-8-3.59-8-8s3.59-8 8-8 8,3.59 8,8-3.59 8-8 8z" />
+            </svg>
+            <span>Privacy: Locally processed, no data stored.</span>
+        </div>
+
+        <div id="monitor-card" class="monitor-display">
+            <div id="status-badge" class="status-badge">
+                <span class="dot"></span>
+                <span id="status-text">System IDLE</span>
+            </div>
+            <div id="distance-readout" class="distance-value">--</div>
+            <div id="distance-unit" class="distance-unit">Monitoring</div>
+        </div>
+
+        <button id="toggle-btn">Start Protection</button>
+
+        <div class="footer">
+            Designed for Local Neural Processing
+        </div>
+
         <div id="video-container">
             <video id="webcam" autoplay playsinline></video>
-            <canvas id="output_canvas"></canvas>
         </div>
-        <button id="toggle-btn">Start Monitoring</button>
-
-        <div class="privacy-note"
-            style="font-size: 0.75rem; margin-top: 15px; color: #64748b; text-align: center; line-height: 1.4;">
-            <svg style="width:12px; height:12px; vertical-align: middle; margin-right: 4px;" viewBox="0 0 24 24"
-                fill="currentColor">
-                <path
-                    d="M12,1L3,5V11C3,16.55 6.84,21.74 12,23C17.16,21.74 21,16.55 21,11V5L12,1M12,11.91V19.15C12,19.26 11.97,19.36 11.92,19.46C11.85,19.57 11.77,19.67 11.66,19.74C11.41,19.9 11.08,19.9 10.83,19.74C10.72,19.67 10.64,19.57 10.57,19.46C10.52,19.36 10.5,19.26 10.5,19.15V11.91C9.6,11.58 9,10.68 9,9.5A3,3 0 0,1 12,6.5A3,3 0 0,1 15,9.5C15,10.68 14.4,11.58 13.5,11.91V12.5H12V11.91Z" />
-            </svg>
-            <strong>Privacy Guaranteed:</strong> All processing is done locally. No data ever leaves your device.
-        </div>
-        <div class="settings-link" style="margin-top: 10px;">Calibration Settings</div>
     </div>
-    <!-- Load MediaPipe Tasks Vision -->
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0"></script>
-    <script src="popup.js" type="module"></script>
+    <script src="popup.js"></script>
 </body>
 
 </html>

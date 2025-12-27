@@ -1,29 +1,41 @@
 {
-  "manifest_version": 3,
-  "name": "Eye Distance Monitor",
-  "version": "1.0",
-  "description": "Monitors eye distance to screen and alerts you if you're too close.",
-  "permissions": ["storage"],
-  "host_permissions": ["<all_urls>"],
-  "action": {
-    "default_popup": "popup.html",
-    "default_icon": {
-      "128": "icon128.png"
-    }
-  },
-  "content_scripts": [
-    {
-      "matches": ["<all_urls>"],
-      "js": ["content.js"]
-    }
-  ],
-  "icons": {
-    "128": "icon128.png"
-  },
-  "web_accessible_resources": [
-    {
-      "resources": ["face_landmarker.task"],
-      "matches": ["<all_urls>"]
-    }
-  ]
+    "manifest_version": 3,
+    "name": "EyeVision Guard",
+    "version": "1.1",
+    "description": "Protects your vision by monitoring eye-to-screen distance in the background.",
+    "permissions": [
+        "storage",
+        "windows",
+        "offscreen"
+    ],
+    "background": {
+        "service_worker": "background.js"
+    },
+    "host_permissions": [
+        "<all_urls>"
+    ],
+    "content_security_policy": {
+        "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
+    },
+    "action": {
+        "default_popup": "popup.html",
+        "default_icon": {
+            "128": "icon128.png"
+        }
+    },
+    "icons": {
+        "128": "icon128.png"
+    },
+    "web_accessible_resources": [
+        {
+            "resources": [
+                "face_landmarker.task",
+                "lib/*",
+                "lib/wasm/*"
+            ],
+            "matches": [
+                "<all_urls>"
+            ]
+        }
+    ]
 }
