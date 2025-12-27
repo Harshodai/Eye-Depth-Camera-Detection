@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "Eye Distance Monitor",
+  "version": "1.0",
+  "description": "Monitors eye distance to screen and alerts you if you're too close.",
+  "permissions": ["storage"],
+  "host_permissions": ["<all_urls>"],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "128": "icon128.png"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"]
+    }
+  ],
+  "icons": {
+    "128": "icon128.png"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["face_landmarker.task"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}
