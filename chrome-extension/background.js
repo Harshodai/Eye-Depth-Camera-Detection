@@ -9,7 +9,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     } else if (request.type === "STOP_MONITORING") {
         closeOffscreenDocument();
     } else if (request.type === "MINIMIZE_WINDOW") {
-        chrome.windows.getCurrent((win) => {
+        // More robust: target the last focused window or current
+        chrome.windows.getLastFocused({ windowTypes: ['normal'] }, (win) => {
             if (win && win.state !== "minimized") {
                 chrome.windows.update(win.id, { state: "minimized" });
             }

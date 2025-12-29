@@ -1,4 +1,4 @@
-// popup.js - Simplified & Robust Controller
+// popup.js - Controller with Alert Delay
 
 const toggleBtn = document.getElementById("toggle-btn");
 const distanceReadout = document.getElementById("distance-readout");
@@ -6,20 +6,40 @@ const distanceUnitLabel = document.getElementById("distance-unit");
 const statusText = document.getElementById("status-text");
 const statusBadge = document.getElementById("status-badge");
 const monitorCard = document.getElementById("monitor-card");
+const alertSlider = document.getElementById("alert-slider");
+const sliderValDisplay = document.getElementById("slider-val");
 
 let isMonitoringState = false;
 
-// Initial state sync with storage
-if (chrome && chrome.storage && chrome.storage.local) {
-    chrome.storage.local.get(['isMonitoring'], (res) => {
-        if (res.isMonitoring) {
-            isMonitoringState = true;
-            updateToActiveUI();
-        } else {
-            updateToIdleUI();
-        }
-    });
+// Initial state sync - Immediate & Persistent
+function syncInitialState() {
+    if (chrome && chrome.storage && chrome.storage.local) {
+        chrome.storage.local.get(['isMonitoring', 'alertDelay'], (res) => {
+            if (res.isMonitoring) {
+                isMonitoringState = true;
+                updateToActiveUI();
+            } else {
+                updateToIdleUI();
+            }
+
+            if (res.alertDelay) {
+                const val = parseInt(res.alertDelay);
+                alertSlider.value = val;
+                sliderValDisplay.innerText = val;
+            }
+        });
+    }
 }
+
+// Run sync immediately
+syncInitialState();
+
+// Slider update logic
+alertSlider.addEventListener("input", (e) => {
+    const val = e.target.value;
+    sliderValDisplay.innerText = val;
+    chrome.storage.local.set({ alertDelay: val });
+});
 
 function updateToActiveUI() {
     toggleBtn.innerText = "Stop Protection";
@@ -46,7 +66,6 @@ chrome.runtime.onMessage.addListener((msg) => {
     if (msg.type === "MONITOR_UPDATE") {
         const { status, distance } = msg;
 
-        // Show distance if it's available
         if (distance !== null && distance !== undefined) {
             distanceReadout.innerText = distance;
             distanceUnitLabel.innerText = "cm to screen";
@@ -56,16 +75,25 @@ chrome.runtime.onMessage.addListener((msg) => {
             statusText.innerText = "Good";
             statusBadge.className = "status-badge active";
             monitorCard.classList.remove("is-warning");
-            distanceReadout.style.color = "#4ade80"; // Bright Green
+            monitorCard.classList.add("active-safe");
+            distanceReadout.style.color = "#4ade80";
         } else if (status.startsWith("WARNING")) {
-            const timeLeft = status.split("|")[1] || "5";
+            const timeLeft = status.split("|")[1] || alertSlider.value;
             statusText.innerText = `Please move back (${timeLeft}s)`;
             statusBadge.className = "status-badge is-warning";
             monitorCard.classList.add("is-warning");
-            distanceReadout.style.color = "#f43f5e"; // Rose Red
+            monitorCard.classList.remove("active-safe");
+            distanceReadout.style.color = "#f43f5e";
+        } else if (status === "BREACH") {
+            statusText.innerText = "Breach! Minimizing...";
+            statusBadge.className = "status-badge is-warning";
+            monitorCard.classList.add("is-warning");
+            monitorCard.classList.remove("active-safe");
+            distanceReadout.style.color = "#f43f5e";
         } else if (status === "LOOKING") {
             statusText.innerText = "Scanning...";
             statusBadge.className = "status-badge active";
+            monitorCard.classList.remove("active-safe");
             distanceReadout.innerText = "--";
             distanceUnitLabel.innerText = "Finding face";
             distanceReadout.style.color = "inherit";
@@ -81,25 +109,28 @@ chrome.runtime.onMessage.addListener((msg) => {
 
 toggleBtn.addEventListener("click", async () => {
     if (isMonitoringState) {
-        // STOP MONITORING
         isMonitoringState = false;
         chrome.storage.local.set({ isMonitoring: false });
         chrome.runtime.sendMessage({ type: "STOP_MONITORING" });
         updateToIdleUI();
     } else {
-        // START MONITORING
         try {
-            // Quick permission check before launching offscreen
             const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-            stream.getTracks().forEach(t => t.stop()); // Stop immediately, offscreen will handle it
+            stream.getTracks().forEach(t => t.stop());
 
             isMonitoringState = true;
             chrome.storage.local.set({ isMonitoring: true });
             chrome.runtime.sendMessage({ type: "START_MONITORING" });
             updateToActiveUI();
+
+            // Safety fallback: if still connecting after 15s, reset
+            setTimeout(() => {
+                if (isMonitoringState && statusText.innerText === "Connecting...") {
+                    statusText.innerText = "Connection Timed Out";
+                    setTimeout(updateToIdleUI, 2000);
+                }
+            }, 15000);
         } catch (err) {
-            console.error("Permission denied or camera busy:", err);
-            // Open setup page if camera fails
             chrome.tabs.create({ url: 'setup.html' });
         }
     }

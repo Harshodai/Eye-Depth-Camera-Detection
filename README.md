@@ -1,172 +1,84 @@
-# Eye Distance Monitor
+# EyeVision Guard 🛡️
 
-A real-time Python application that uses your webcam to monitor the distance between your eyes and the screen. It alerts you if you get too close (less than 2.5 feet / 76 cm) to help prevent eye strain.
+EyeVision Guard is a suite of AI-powered tools designed to protect your vision by monitoring the distance between your eyes and the screen. It alerts you if you get too close (less than 2.5 feet / 76 cm) to help prevent eye strain and CVS (Computer Vision Syndrome).
 
-## Features
-- **Real-time Detection**: Uses MediaPipe for high-accuracy face and iris tracking.
-- **Distance Estimation**: Calculates distance using the focal length method.
-- **Privacy First**: All processing is done locally on your device.
-- **Visual Alerts**: Provides friendly on-screen warnings when you are too close.
-- **Auto-Lock**: Locks your computer (Windows+L) if you remain too close for a set duration (default 10s).
+The project includes:
+1.  **🚀 EyeVision Guard (Chrome Extension)**: A lightweight, privacy-focused extension for background monitoring.
+2.  **💻 Desktop Monitor (Python)**: A robust desktop application for deep tracking and system-level alerts.
+
+---
+
+## 🚀 EyeVision Guard (Chrome Extension)
+
+The most popular way to use EyeVision Guard. It runs entirely in your browser using local AI.
+
+### Features
+- **Privacy First**: "No Data is Stored anywhere" - All AI processing happens locally on your device.
+- **Background Protection**: Continues monitoring even when the popup is closed.
+- **Customizable Delay**: Set an alert delay from 5s to 15s using a compact horizontal slider.
+- **Auto-Minimize**: Automatically minimizes the browser if you stay too close for too long.
+
+### Installation
+1. Open Chrome and go to `chrome://extensions/`.
+2. Enable **Developer Mode** (top right).
+3. Click **Load Unpacked** and select the `chrome-extension` folder from this repository.
+
+---
+
+## 💻 Desktop Monitor (Python)
+
+A real-time desktop application for system-wide protection.
+
+### Features
+- **Auto-Lock**: Locks your computer (Windows+L) if you remain too close.
 - **Configurable**: Fully tweakable settings via `config.ini`.
+- **MediaPipe Engine**: Uses the same high-accuracy iris tracking engine.
 
-## Requirements
-- Python 3.9+
-- Webcam
-- Windows OS (for Screen Lock feature)
+### Quick Start
+1. `pip install -r requirements.txt`
+2. `python main.py`
 
-## Configuration
-You can modify `config.ini` to change the settings:
-```ini
-[Settings]
-safe_distance_feet = 2.5
-lock_time_seconds = 10
-monitoring_enabled = true
-```
+---
 
-## Installation
+## 🧪 Testing & Verification Guide
 
-1. Clone the repository:
-   ```bash
-   git clone <your-repo-url>
-   cd <repo-name>
-   ```
+Follow these manual test cases to verify the system is working perfectly.
 
-2. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-   *(Note: If errors occur on Windows, try `py -m pip install -r requirements.txt`)*
+### Test Case 1: UI & Privacy Verification
+- **Step**: Open the EyeVision Guard extension popup.
+- **Check**: The privacy banner should read "**No Data is Stored anywhere**" in green. The UI should be compact with a horizontal 5-15s slider.
 
-3. **Important**: Ensure the AI model file is present.
-   - The script requires `face_landmarker.task`.
-   - You can download it by running: `py download_model.py` (if included) or manually from [Google MediaPipe Models](https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task).
+### Test Case 2: Initialization & Stability (Race Condition Test)
+- **Step**: Close and re-open the popup.
+- **Check**: The slider and distance monitor should initialize correctly after 1.5 seconds without any layout flickering or "jumping" values.
 
-## Usage
+### Test Case 3: Live Proximity Tracking
+- **Step**: Click **Start Protection** and look at your screen.
+- **Check**: The status should switch to "**Good**" (Green) and show your real-time distance in centimeters.
 
-Run the main script:
-```bash
-python main.py
-```
-(or `py main.py` on Windows)
+### Test Case 4: Alert Sync
+- **Step**: Set slider to **5s**. Lean in close (< 76cm).
+- **Check**: Text changes to "**Please move back (5s)**" and counts down. Move back; it should reset to "**Good**" immediately.
 
-Press `q` to quit the application.
+### Test Case 5: Breach & Action
+- **Step**: Stay at a close distance until the countdown reaches **0s**.
+- **Check**: The Chrome window (Extension) or PC (Python) should automatically perform the protection action (Minimize/Lock).
 
-## Integration & Workflow Guide
+---
 
-Want to use this eye-tracking technology in your own app (e.g., a concentration timer, a posture corrector, or a game)? Follow these steps:
+## 🛠️ How it Works
 
-### Step 1: Copy Necessary Files
-Copy these two files into your project directory:
-1.  `distance_estimator.py` (The core logic class)
-2.  `face_landmarker.task` (The AI model)
+### 1. AI Engine
+We use **MediaPipe's Face Landmarker** to detect 478 3D landmarks. specifically tracking the irises for millimeter-accurate positioning.
 
-### Step 2: Install Dependencies
-Ensure your environment deals with the computer vision libraries:
-```bash
-pip install opencv-python mediapipe numpy
-```
+### 2. Distance Algorithm
+We use the **Triangle Similarity Principle**:
+$$ D = \frac{W \times F}{P} $$
+- $W$: Interpupillary Distance (6.3 cm)
+- $P$: Pixel width between eyes
+- $F$: Camera Focal Length (1100)
 
-### Step 3: Minimal Code Example
-Here is the bare minimum code to get distance readings in your own script:
+---
 
-```python
-import cv2
-from distance_estimator import DistanceEstimator
-
-# 1. Initialize the estimator
-# Increase focal_length if distance seems too small, decrease if too large.
-estimator = DistanceEstimator(
-    model_path='face_landmarker.task',
-    focal_length=1100
-)
-
-cap = cv2.VideoCapture(0)
-
-while cap.isOpened():
-    success, frame = cap.read()
-    if not success: break
-
-    # 2. Get the distance
-    distance_cm, left_eye, right_eye = estimator.get_distance(frame)
-
-    if distance_cm:
-        print(f"Distance: {distance_cm:.1f} cm")
-        
-        # Example Logic: Trigger an action if too close
-        if distance_cm < 50:
-             print("Too Close!")
-    
-    # Optional: Display the frame
-    cv2.imshow("My App", frame)
-    if cv2.waitKey(1) == ord('q'): break
-
-cap.release()
-cv2.destroyAllWindows()
-```
-
-### Step 5: Adding Screen Lock & Config (Advanced)
-To add the auto-lock feature and configuration to your own app, follow this pattern:
-
-1.  **Create a `config.ini`**:
-    ```ini
-    [Settings]
-    safe_distance_feet = 2.5
-    lock_time_seconds = 10
-    ```
-
-2.  **Update your Python script**:
-    ```python
-    import configparser
-    import ctypes
-    import time
-    
-    # ... (Load Config)
-    config = configparser.ConfigParser()
-    config.read('config.ini')
-    SAFE_DIST_FT = config.getfloat("Settings", "safe_distance_feet", fallback=2.5)
-    LOCK_TIME = config.getfloat("Settings", "lock_time_seconds", fallback=10)
-    
-    violation_start = None
-    
-    # ... (Inside your loop)
-    if distance_cm < (SAFE_DIST_FT * 30.48):
-        if violation_start is None:
-            violation_start = time.time()
-        
-        # Check if time exceeded
-        if (time.time() - violation_start) > LOCK_TIME:
-            print("Locking...")
-            ctypes.windll.user32.LockWorkStation()
-            violation_start = None # Reset
-    else:
-        violation_start = None # Safe
-    ```
-
-### Step 6: Customization
-You can tweak the `DistanceEstimator` initialization:
-- `target_width`: Change this if you want to track an object with a different known width (default is 6.3cm for eyes).
-- `focal_length`: If you use a different camera (e.g., 4K webcam vs Laptop webcam), you might need to adjust this value. 
-  - *Calibration Tip*: Sit exactly 50cm away. Tweak `focal_length` until the code prints "50 cm".
-
-## How it Works
-### 1. Face & Iris Tracking
-We use **MediaPipe's Face Landmarker** (via the modern `mp.tasks` API) to detect 478 3D facial landmarks. This model is robust to lighting changes and head pose.
-- **Why `face_landmarker.task`?**: This file contains the pre-trained machine learning model weights. We use the Tasks API instead of the older `mp.solutions` because it is more efficient, supports the latest models, and avoids compatibility issues with newer Python versions (like Python 3.13).
-
-### 2. Distance Estimation Algorithm
-We use the **Triangle Similarity Principle** (Monocular Depth Estimation).
-- **Reference**: The average human Interpupillary Distance (IPD) is approximately **6.3 cm**. variables:
-    - $W$: Real width (6.3 cm)
-    - $P$: Pixel width (measured distance between eyes on screen)
-    - $F$: Focal Length (a constant factor depending on the camera)
-- **Formula**:
-  $$ D = \frac{W \times F}{P} $$
-- **Process**:
-    1. The app detects the center of the left and right irises.
-    2. It calculates the distance between them in pixels ($P$).
-    3. It applies the formula to estimate the real-world distance ($D$).
-
-### 3. Visual Feedback
-- If $D < 76$ cm (2.5 feet), the text turns **Orange/Red** and warns you.
-- Otherwise, it shows **Green** text indicating a safe distance.
+## 🛡️ Privacy Policy
+**100% Local**. No images are captured. No data is stored. No biometric info is sent to any server. Your camera feed is used strictly for real-time calculation and discarded instantly.
