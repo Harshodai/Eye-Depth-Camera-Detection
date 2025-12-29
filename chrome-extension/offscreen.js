@@ -34,7 +34,22 @@ let lastFaceDetectedTime = 0;
 const FACE_LOST_GRACE_MS = 1000;
 
 (async () => {
-    // 2. WAIT FOR STORAGE API (Fixes race condition)
+    // 1. IMMEDIATE STARTUP ACTIONS
+    // Notify Popup immediately to clear "Connecting..."
+    chrome.runtime.sendMessage({ type: "MONITOR_UPDATE", status: "LOOKING" });
+
+    // Register Direct Message Listener for Slider
+    chrome.runtime.onMessage.addListener((msg) => {
+        if (msg.type === "UPDATE_DELAY") {
+            const val = parseInt(msg.value);
+            if (!isNaN(val)) {
+                alertDelaySeconds = val;
+                originalLog("Slider Update:", val);
+            }
+        }
+    });
+
+    // 2. WAIT FOR STORAGE API
     const waitForStorage = async (retries = 20) => {
         for (let i = 0; i < retries; i++) {
             try {
@@ -56,19 +71,12 @@ const FACE_LOST_GRACE_MS = 1000;
             originalLog("EyeVision Guard: Initial delay loaded", alertDelaySeconds);
         }
 
-        chrome.storage.onChanged.addListener((changes, area) => {
-            if (area === 'local' && changes.alertDelay) {
-                const parsed = parseInt(changes.alertDelay.newValue);
-                alertDelaySeconds = isNaN(parsed) ? 5 : parsed;
-                originalLog("EyeVision Guard: Delay updated", alertDelaySeconds);
-            }
-        });
+        // chrome.storage.onChanged removed to prevent 'undefined' errors.
+        // We rely on chrome.runtime.onMessage for real-time updates.
     }
 
     // 3. LOAD AI ENGINE & CAMERA
     try {
-        // Immediate visual feedback to clear "Connecting..."
-        chrome.runtime.sendMessage({ type: "MONITOR_UPDATE", status: "LOOKING" });
 
         const vision = await import(chrome.runtime.getURL("lib/vision.js"));
         const filesetResolver = await vision.FilesetResolver.forVisionTasks(chrome.runtime.getURL("lib/wasm"));
@@ -80,7 +88,10 @@ const FACE_LOST_GRACE_MS = 1000;
             },
             outputFaceBlendshapes: false,
             runningMode: "VIDEO",
-            numFaces: 1
+            numFaces: 1,
+            minFaceDetectionConfidence: 0.5,
+            minFacePresenceConfidence: 0.5,
+            minTrackingConfidence: 0.5
         });
 
         const stream = await navigator.mediaDevices.getUserMedia({
@@ -98,10 +109,11 @@ const FACE_LOST_GRACE_MS = 1000;
             if (video.readyState >= 2 && video.videoWidth > 0) {
                 originalLog("EyeVision Guard: System Active.");
                 clearInterval(startInterval);
-                setInterval(predictTick, 100);
+                // Optimized Speed: Check every 50ms (20fps) instead of 100ms (10fps)
+                setInterval(predictTick, 50);
                 predictTick();
             }
-        }, 200);
+        }, 100); // Poll camera status faster too (100ms)
 
         // Fail-safe reset if everything stalls
         setTimeout(() => {

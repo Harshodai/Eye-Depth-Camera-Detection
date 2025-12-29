@@ -39,6 +39,7 @@ alertSlider.addEventListener("input", (e) => {
     const val = e.target.value;
     sliderValDisplay.innerText = val;
     chrome.storage.local.set({ alertDelay: val });
+    chrome.runtime.sendMessage({ type: "UPDATE_DELAY", value: val });
 });
 
 function updateToActiveUI() {
@@ -97,6 +98,10 @@ chrome.runtime.onMessage.addListener((msg) => {
             distanceReadout.innerText = "--";
             distanceUnitLabel.innerText = "Finding face";
             distanceReadout.style.color = "inherit";
+
+            // CONFIG HANDSHAKE: Ensure backend has the correct slider value immediately
+            const currentVal = alertSlider.value;
+            chrome.runtime.sendMessage({ type: "UPDATE_DELAY", value: currentVal });
         }
     } else if (msg.type === "MONITOR_ERROR") {
         statusText.innerText = "Camera Error";
