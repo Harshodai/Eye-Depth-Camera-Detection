@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Regression Suite</title>
+    <style>
+        body {
+            background: #0f172a;
+            color: #f8fafc;
+            font-family: sans-serif;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #38bdf8;
+        }
+
+        .pass {
+            color: #4ade80;
+        }
+
+        .fail {
+            color: #f87171;
+        }
+
+        .test-item {
+            margin: 8px 0;
+            font-family: monospace;
+        }
+
+        /* Mock UI elements for break.js */
+        #ui-mocks {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>EyeVision Guard Regression Suite</h1>
+    <div id="summary">Running tests...</div>
+    <ul id="test-list"></ul>
+
+    <!-- Mock UI -->
+    <div id="ui-mocks">
+        <div id="countdown"></div>
+        <svg>
+            <circle id="progress-circle"></circle>
+        </svg>
+        <button id="close-btn"></button>
+    </div>
+
+    <!-- Mocks Setup -->
+    <script>
+        window.__TEST_MODE__ = true;
+
+        // Simple Mock Spy Factory
+        const jest = {
+            fn: (impl) => {
+                const spy = (...args) => {
+                    spy.mock.calls.push(args);
+                    return impl ? impl(...args) : undefined;
+                };
+                spy.mock = { calls: [] };
+                spy.mockClear = () => { spy.mock.calls = []; };
+                spy.mockImplementation = (newImpl) => { impl = newImpl; };
+                return spy;
+            }
+        };
+
+        // Chrome API Mocks
+        window.chrome = {
+            runtime: {
+                onMessage: { addListener: jest.fn() },
+                onInstalled: { addListener: jest.fn() },
+                sendMessage: jest.fn(),
+                getURL: (path) => path,
+                lastError: null
+            },
+            storage: {
+                local: {
+                    get: jest.fn((keys, cb) => cb({})),
+                    set: jest.fn(),
+                    remove: jest.fn()
+                }
+            },
+            alarms: {
+                onAlarm: { addListener: jest.fn() },
+                create: jest.fn(),
+                clear: jest.fn(),
+                get: jest.fn()
+            },
+            windows: {
+                onRemoved: { addListener: jest.fn() },
+                getLastFocused: jest.fn(),
+                update: jest.fn()
+            },
+            tabs: {
+                query: jest.fn(),
+                remove: jest.fn()
+            },
+            notifications: {
+                create: jest.fn(),
+                onClicked: { addListener: jest.fn() },
+                onButtonClicked: { addListener: jest.fn() }
+            },
+            offscreen: {
+                createDocument: jest.fn(),
+                closeDocument: jest.fn()
+            },
+            action: {
+                setBadgeText: jest.fn(),
+                setBadgeBackgroundColor: jest.fn()
+            }
+        };
+    </script>
+
+    <!-- Load Test Framework -->
+    <script src="framework.js"></script>
+
+    <!-- Load Source Files (Modules will expose to EyeGuard global) -->
+    <script src="../break.js"></script>
+    <script src="../background.js"></script>
+
+    <!-- Load Specs -->
+    <script src="spec_break.js"></script>
+    <script src="spec_background.js"></script>
+
+    <!-- Run -->
+    <script>
+        window.onload = runTests;
+    </script>
+</body>
+
+</html>

@@ -146,5 +146,15 @@ function completeBreak() {
 // Close logic
 closeBtn.addEventListener('click', closeWindow);
 
-// Start
-initTimer();
+// Start or Expose for Testing
+if (window.__TEST_MODE__) {
+    window.EyeGuard = window.EyeGuard || {};
+    window.EyeGuard.break = {
+        initTimer,
+        parseNumberParam,
+        completeBreak,
+        setProgress
+    };
+} else {
+    initTimer();
+}

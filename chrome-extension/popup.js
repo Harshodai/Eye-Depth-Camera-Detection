@@ -149,12 +149,11 @@ const breakDuration = document.getElementById("break-duration");
 const valInterval = document.getElementById("val-interval");
 const valDuration = document.getElementById("val-duration");
 const checkNotify = document.getElementById("check-notify");
-const checkSound = document.getElementById("check-sound");
 const checkBlink = document.getElementById("check-blink");
 const breakCountdown = document.getElementById("break-countdown");
 
 function syncBreakSettings() {
-    chrome.storage.local.get(['breakEnabled', 'breakInterval', 'breakDuration', 'alertNotify', 'alertSound', 'alertBlink'], (res) => {
+    chrome.storage.local.get(['breakEnabled', 'breakInterval', 'breakDuration', 'alertNotify', 'alertBlink'], (res) => {
         breakToggle.checked = res.breakEnabled || false;
         breakSettingsDiv.style.display = res.breakEnabled ? "flex" : "none";
 
@@ -169,7 +168,6 @@ function syncBreakSettings() {
         valDuration.innerText = duration;
 
         checkNotify.checked = res.alertNotify !== false;
-        checkSound.checked = res.alertSound !== false;
         checkBlink.checked = res.alertBlink !== false;
 
         updateCountdown();
@@ -184,7 +182,6 @@ function syncBreakSettings() {
                     interval: parseInt(breakInterval.value),
                     duration: parseInt(breakDuration.value),
                     notify: checkNotify.checked,
-                    sound: checkSound.checked,
                     blink: checkBlink.checked
                 }
             });
@@ -198,7 +195,6 @@ function saveBreakSettings() {
         interval: parseInt(breakInterval.value),
         duration: parseInt(breakDuration.value),
         notify: checkNotify.checked,
-        sound: checkSound.checked,
         blink: checkBlink.checked
     };
 
@@ -211,7 +207,6 @@ function saveBreakSettings() {
         breakInterval: settings.interval,
         breakDuration: settings.duration,
         alertNotify: settings.notify,
-        alertSound: settings.sound,
         alertBlink: settings.blink
     });
 
@@ -224,7 +219,6 @@ breakToggle.addEventListener("change", saveBreakSettings);
 breakInterval.addEventListener("input", saveBreakSettings); // Use 'input' for real-time slider updates
 breakDuration.addEventListener("input", saveBreakSettings);
 checkNotify.addEventListener("change", saveBreakSettings);
-checkSound.addEventListener("change", saveBreakSettings);
 checkBlink.addEventListener("change", saveBreakSettings);
 
 function updateCountdown() {

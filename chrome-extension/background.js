@@ -186,12 +186,11 @@ async function closeOffscreenDocument() {
 // --- 20-20-20 Rule Implementation ---
 
 chrome.runtime.onInstalled.addListener(() => {
-    chrome.storage.local.get(['breakInterval', 'breakDuration', 'breakEnabled', 'alertSound', 'alertNotify', 'alertBlink'], (res) => {
+    chrome.storage.local.get(['breakInterval', 'breakDuration', 'breakEnabled', 'alertNotify', 'alertBlink'], (res) => {
         if (!res.breakInterval) chrome.storage.local.set({ breakInterval: 20 });
         if (!res.breakDuration) chrome.storage.local.set({ breakDuration: 20 });
         if (typeof res.breakEnabled === 'undefined') chrome.storage.local.set({ breakEnabled: true });
         if (typeof res.alertNotify === 'undefined') chrome.storage.local.set({ alertNotify: true });
-        if (typeof res.alertSound === 'undefined') chrome.storage.local.set({ alertSound: true });
         if (typeof res.alertBlink === 'undefined') chrome.storage.local.set({ alertBlink: true });
     });
 });
@@ -203,7 +202,7 @@ chrome.alarms.onAlarm.addListener((alarm) => {
 });
 
 function triggerBreak() {
-    chrome.storage.local.get(['breakDuration', 'alertNotify', 'alertSound', 'alertBlink'], (res) => {
+    chrome.storage.local.get(['breakDuration', 'alertNotify', 'alertBlink'], (res) => {
         const duration = res.breakDuration || 20;
 
         if (res.alertNotify) {
@@ -303,4 +302,15 @@ function restoreTimerState() {
     });
 }
 
-restoreTimerState();
+// Start or Expose for Testing
+if (typeof window !== 'undefined' && window.__TEST_MODE__) {
+    window.EyeGuard = window.EyeGuard || {};
+    window.EyeGuard.background = {
+        scheduleNextBreak,
+        handleBreakSettingsUpdate,
+        triggerBreak,
+        restoreTimerState
+    };
+} else {
+    restoreTimerState();
+}
