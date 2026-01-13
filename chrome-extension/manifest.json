@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "EyeVision Guard",
-    "version": "1.1",
+    "version": "1.2",
     "description": "Protects your vision by monitoring eye-to-screen distance in the background.",
     "permissions": [
         "storage",
@@ -33,7 +33,7 @@
                 "lib/*",
                 "lib/wasm/*",
                 "break.html",
-                "deep_space.png",
+                "milky_way.png",
                 "icon128.png"
             ],
             "matches": [

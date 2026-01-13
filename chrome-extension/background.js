@@ -41,6 +41,8 @@ chrome.windows.onRemoved.addListener((id) => {
     chrome.storage.local.get('breakWindowId', (res) => {
         if (res.breakWindowId === id) {
             chrome.storage.local.remove(['breakWindowId', 'breakTarget']);
+            // If the user manually closed the break window, schedule the next one!
+            scheduleNextBreak();
         }
     });
 });
@@ -111,8 +113,9 @@ function handleCloseBreakPage(sender, sendResponse) {
                     tryFallbackClose(sender);
                     return;
                 }
-                // Clear stored id
+                // Clear stored id and SCHEDULE NEXT BREAK
                 chrome.storage.local.remove(['breakWindowId', 'breakTarget']);
+                scheduleNextBreak();
                 if (sendResponse) sendResponse({ closed: true });
             });
             return;
@@ -125,19 +128,34 @@ function handleCloseBreakPage(sender, sendResponse) {
 
 function tryFallbackClose(sender) {
     // 1) if sender.tab.id exists, remove that tab
-    if (sender && sender.tab && Number.isFinite(sender.tab.id)) {
+    if (sender && sender.tab && typeof sender.tab.id === 'number') {
         chrome.tabs.remove(sender.tab.id, () => {
+            // Fix: Suppress "No tab with id" error
+            if (chrome.runtime.lastError) {
+                // Tab likely already closed, ignore
+            }
             chrome.storage.local.remove(['breakWindowId', 'breakTarget']);
+            scheduleNextBreak();
         });
         return;
     }
     // 2) query for break.html tabs and close them
     chrome.tabs.query({ url: chrome.runtime.getURL("break.html") }, (tabs) => {
         if (tabs && tabs.length) {
+            let processed = 0;
             tabs.forEach(t => {
-                chrome.tabs.remove(t.id, () => { /* silent */ });
+                chrome.tabs.remove(t.id, () => {
+                    if (chrome.runtime.lastError) { /* ignore */ }
+                    processed++;
+                    if (processed === tabs.length) {
+                        chrome.storage.local.remove(['breakWindowId', 'breakTarget']);
+                        scheduleNextBreak();
+                    }
+                });
             });
-            chrome.storage.local.remove(['breakWindowId', 'breakTarget']);
+        } else {
+            // Just in case nothing was found, still schedule next
+            scheduleNextBreak();
         }
     });
 }
@@ -169,7 +187,7 @@ async function closeOffscreenDocument() {
 
 chrome.runtime.onInstalled.addListener(() => {
     chrome.storage.local.get(['breakInterval', 'breakDuration', 'breakEnabled', 'alertSound', 'alertNotify', 'alertBlink'], (res) => {
-        if (!res.breakInterval) chrome.storage.local.set({ breakInterval: 10 });
+        if (!res.breakInterval) chrome.storage.local.set({ breakInterval: 20 });
         if (!res.breakDuration) chrome.storage.local.set({ breakDuration: 20 });
         if (typeof res.breakEnabled === 'undefined') chrome.storage.local.set({ breakEnabled: true });
         if (typeof res.alertNotify === 'undefined') chrome.storage.local.set({ alertNotify: true });
@@ -205,6 +223,9 @@ function triggerBreak() {
 
         // AUTO-OPEN the break page immediately
         openBreakPage();
+
+        // NOTE: We do NOT schedule the next break here. 
+        // We wait for the current break to finish/close.
     });
 }
 
@@ -238,16 +259,33 @@ function startIconBlink(durationSecs) {
     }, durationSecs * 1000);
 }
 
+// Logic to schedule the *next* break only
+function scheduleNextBreak() {
+    chrome.storage.local.get(['breakEnabled', 'breakInterval'], (res) => {
+        if (res.breakEnabled !== false) {
+            const intervalMinutes = parseInt(res.breakInterval) || 20;
+            // Use 'delayInMinutes' ONLY. No 'periodInMinutes'.
+            // This ensures it runs once, then we must manually reschedule.
+            chrome.alarms.create("breakTimer", {
+                delayInMinutes: intervalMinutes
+            });
+            console.log(`Next break scheduled in ${intervalMinutes} minutes.`);
+
+            // Optional: Store the expected time for UI countdowns if needed
+            const nextTime = Date.now() + (intervalMinutes * 60000);
+            chrome.storage.local.set({ nextBreakTime: nextTime });
+        } else {
+            console.log("Break timer is disabled, not scheduling next.");
+        }
+    });
+}
+
 function handleBreakSettingsUpdate(settings) {
     chrome.alarms.clear("breakTimer");
 
     if (settings.enabled) {
-        const intervalSeconds = parseInt(settings.interval);
-        chrome.alarms.create("breakTimer", {
-            delayInMinutes: intervalSeconds / 60,
-            periodInMinutes: intervalSeconds / 60
-        });
-        console.log(`Break Timer: Scheduled every ${intervalSeconds} seconds via chrome.alarms`);
+        // Just schedule the next one immediately based on new interval
+        scheduleNextBreak();
     }
 }
 
@@ -255,9 +293,11 @@ function restoreTimerState() {
     chrome.storage.local.get(['breakEnabled', 'breakInterval'], (res) => {
         const isEnabled = (res.breakEnabled !== false);
         if (isEnabled) {
-            handleBreakSettingsUpdate({
-                enabled: true,
-                interval: res.breakInterval || 10
+            // Verify if alarm exists, if not, schedule it
+            chrome.alarms.get("breakTimer", (alarm) => {
+                if (!alarm) {
+                    scheduleNextBreak();
+                }
             });
         }
     });
