@@ -367,9 +367,29 @@
                         value="20" step="1">
                 </div>
 
-                <div class="checkbox-group">
-                    <label class="check-label"><input type="checkbox" id="check-notify" checked> Notify</label>
-                    <label class="check-label"><input type="checkbox" id="check-blink" checked> Blink</label>
+                <!-- Modern Toggle Cards for Notify / Blink -->
+                <div class="toggle-group">
+                    <input type="checkbox" id="check-notify" class="hidden-check" checked>
+                    <label for="check-notify" class="toggle-card">
+                        <div class="icon-box">
+                            <svg viewBox="0 0 24 24">
+                                <path
+                                    d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-2 1H8v-6c0-2.48 1.51-4.5 4-4.5s4 2.02 4 4.5v6z" />
+                            </svg>
+                        </div>
+                        <span>Notify</span>
+                    </label>
+
+                    <input type="checkbox" id="check-blink" class="hidden-check" checked>
+                    <label for="check-blink" class="toggle-card">
+                        <div class="icon-box">
+                            <svg viewBox="0 0 24 24">
+                                <path
+                                    d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" />
+                            </svg>
+                        </div>
+                        <span>Blink</span>
+                    </label>
                 </div>
 
                 <div class="countdown-text" id="break-countdown">Next break: --:--</div>
@@ -411,28 +431,79 @@
                 border-width: 1px;
             }
 
-            .checkbox-group {
-                display: flex;
-                justify-content: flex-start;
-                gap: 15px;
-                margin-top: 5px;
-                background: rgba(0, 0, 0, 0.2);
-                padding: 6px;
-                border-radius: 6px;
+            /* HIDE OLD CHECKBOXES */
+            .hidden-check {
+                display: none;
             }
 
-            .check-label {
-                font-size: 0.55rem;
+            .toggle-group {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+                margin-top: 8px;
+            }
+
+            .toggle-card {
+                background: rgba(255, 255, 255, 0.03);
+                border: 1px solid rgba(255, 255, 255, 0.05);
+                border-radius: 8px;
+                padding: 10px;
                 display: flex;
+                flex-direction: row;
                 align-items: center;
-                gap: 4px;
-                color: var(--text-dim);
+                justify-content: center;
+                gap: 8px;
                 cursor: pointer;
+                transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+                position: relative;
+                overflow: hidden;
+            }
+
+            .toggle-card:hover {
+                background: rgba(255, 255, 255, 0.06);
+                transform: translateY(-1px);
+            }
+
+            /* ICONS */
+            .icon-box svg {
+                width: 16px;
+                height: 16px;
+                fill: var(--text-dim);
+                transition: fill 0.2s;
+            }
+
+            .toggle-card span {
+                font-size: 0.7rem;
+                font-weight: 600;
+                color: var(--text-dim);
                 transition: color 0.2s;
             }
 
-            .check-label:hover {
-                color: white;
+            /* CHECKED STATE */
+            .hidden-check:checked+.toggle-card {
+                background: rgba(56, 189, 248, 0.1);
+                border-color: rgba(56, 189, 248, 0.4);
+                box-shadow: 0 0 10px rgba(56, 189, 248, 0.1) inset;
+            }
+
+            .hidden-check:checked+.toggle-card .icon-box svg {
+                fill: #38bdf8;
+            }
+
+            .hidden-check:checked+.toggle-card span {
+                color: #f8fafc;
+            }
+
+            /* ANIMATED BORDER GLOW */
+            .hidden-check:checked+.toggle-card::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 3px;
+                height: 100%;
+                background: var(--primary);
+                opacity: 0.8;
             }
 
             .countdown-text {
