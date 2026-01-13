@@ -13,6 +13,7 @@ The project includes:
 The most popular way to use EyeVision Guard. It runs entirely in your browser using local AI.
 
 ### Features
+- **Smart Galaxy Break Timer**: Implements the 20-20-20 rule with a breathing "Cosmic Drift" galaxy animation to help you relax.
 - **Privacy First**: "No Data is Stored anywhere" - All AI processing happens locally on your device.
 - **Background Protection**: Continues monitoring even when the popup is closed.
 - **Customizable Delay**: Set an alert delay from 5s to 15s using a compact horizontal slider.
@@ -63,6 +64,12 @@ Follow these manual test cases to verify the system is working perfectly.
 ### Test Case 5: Breach & Action
 - **Step**: Stay at a close distance until the countdown reaches **0s**.
 - **Check**: The Chrome window (Extension) or PC (Python) should automatically perform the protection action (Minimize/Lock).
+
+### Test Case 6: 20-20-20 Break & Galaxy Timer
+- **Step**: Wait for the 20-minute timer (or manually trigger via Developer Console).
+- **Check**: A full-screen "Time to Rest" page opens with a rotating 3D Milky Way background.
+- **Step**: Wait for the 20-second breathing countdown.
+- **Check**: The text changes to "I'm Recharged" with a checkmark. Click it to resume.
 
 ---
 

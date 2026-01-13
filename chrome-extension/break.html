@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Time to Rest</title>
+    <style>
+        :root {
+            --bg-dark: #020617;
+            --primary: #38bdf8;
+            --secondary: #818cf8;
+            --accent: #f43f5e;
+            --glass: rgba(0, 0, 0, 0.4);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background-color: var(--bg-dark);
+            color: #f8fafc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            user-select: none;
+            background: #000;
+        }
+
+        /* Animated Background Layer */
+        .bg-video-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url("milky_way.png") no-repeat center center;
+            background-size: cover;
+            z-index: 0;
+            /* Simulate 3D motion/video with slow zoom and pan */
+            animation: cosmic-drift 60s infinite alternate ease-in-out;
+            transform-origin: center;
+        }
+
+        @keyframes cosmic-drift {
+            0% {
+                transform: scale(1) translate(0, 0);
+            }
+
+            50% {
+                transform: scale(1.15) translate(-2%, 1%);
+            }
+
+            100% {
+                transform: scale(1.1) translate(2%, -1%);
+            }
+        }
+
+        /* Overlay to darken background slightly for text pop */
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0.6) 100%);
+            z-index: 1;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 500px;
+            background: var(--glass);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            position: relative;
+            z-index: 10;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin: 0 0 10px 0;
+            background: linear-gradient(135deg, #fff 0%, var(--primary) 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            color: #cbd5e1;
+            margin-bottom: 30px;
+            font-weight: 500;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+        }
+
+        .timer-ring {
+            position: relative;
+            width: 260px;
+            height: 260px;
+            margin: 0 auto 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .timer-svg {
+            position: absolute;
+            width: 180px;
+            height: 180px;
+            transform: rotate(-90deg);
+            z-index: 2;
+        }
+
+        .timer-circle {
+            fill: none;
+            stroke: rgba(255, 255, 255, 0.1);
+            stroke-width: 6;
+        }
+
+        .timer-progress {
+            fill: none;
+            stroke: var(--primary);
+            stroke-width: 6;
+            stroke-linecap: round;
+            stroke-dasharray: 502;
+            stroke-dashoffset: 0;
+            transition: stroke-dashoffset 0.25s linear;
+            filter: drop-shadow(0 0 8px var(--primary));
+        }
+
+        /* Galaxy / Solar System Breathing Effect */
+        .galaxy-container {
+            position: absolute;
+            width: 240px;
+            height: 240px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1;
+            animation: breathe-galaxy 8s infinite ease-in-out;
+            pointer-events: none;
+        }
+
+        .galaxy-spiral {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: conic-gradient(from 0deg, transparent 0%, var(--primary) 10%, var(--secondary) 30%, transparent 60%);
+            mask: radial-gradient(circle, transparent 30%, black 70%);
+            -webkit-mask: radial-gradient(circle, transparent 30%, black 70%);
+            opacity: 0.6;
+            animation: spin-galaxy 20s linear infinite;
+        }
+
+        .galaxy-spiral:nth-child(2) {
+            animation-direction: reverse;
+            background: conic-gradient(from 180deg, transparent 0%, var(--accent) 15%, #a855f7 40%, transparent 60%);
+            transform: scale(0.8);
+            opacity: 0.4;
+        }
+
+        .galaxy-core {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            background: radial-gradient(circle, #fff 0%, #cbd5e1 40%, transparent 80%);
+            border-radius: 50%;
+            box-shadow: 0 0 30px 10px rgba(255, 255, 255, 0.3);
+            z-index: 2;
+        }
+
+        /* Orbiting elements */
+        .planet {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            border-radius: 50%;
+            background: #fff;
+            box-shadow: 0 0 10px #fff;
+            transform-origin: center;
+            z-index: 2;
+        }
+
+        .planet-1 {
+            width: 8px;
+            height: 8px;
+            margin-top: -4px;
+            /* Center offset */
+            margin-left: -4px;
+            background: #38bdf8;
+            box-shadow: 0 0 12px #38bdf8;
+        }
+
+        .planet-2 {
+            width: 12px;
+            height: 12px;
+            margin-top: -6px;
+            margin-left: -6px;
+            background: #fbbf24;
+            box-shadow: 0 0 15px #fbbf24;
+        }
+
+        /* Orbit rings container rotating */
+        .orbit-ring-1 {
+            position: absolute;
+            width: 160px;
+            height: 160px;
+            animation: spin-galaxy 12s linear infinite;
+        }
+
+        /* Planet pushed to edge of ring */
+        .orbit-ring-1 .planet {
+            top: 0;
+            left: 50%;
+        }
+
+        .orbit-ring-2 {
+            position: absolute;
+            width: 240px;
+            height: 240px;
+            animation: spin-galaxy 25s linear infinite reverse;
+        }
+
+        .orbit-ring-2 .planet {
+            top: 100%;
+            left: 50%;
+        }
+
+        @keyframes breathe-galaxy {
+
+            0%,
+            100% {
+                transform: scale(0.9);
+                opacity: 0.8;
+            }
+
+            50% {
+                transform: scale(1.1);
+                opacity: 1;
+            }
+        }
+
+        @keyframes spin-galaxy {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .timer-text {
+            font-size: 3.5rem;
+            font-weight: 700;
+            color: white;
+            z-index: 3;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+            position: absolute;
+        }
+
+        .instructions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .instruction-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 12px;
+            text-align: left;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: 0.3s;
+        }
+
+        .instruction-item:hover {
+            border-color: rgba(56, 189, 248, 0.5);
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .icon {
+            font-size: 1.5rem;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 4px;
+            display: block;
+        }
+
+        .desc {
+            font-size: 0.8rem;
+            color: #cbd5e1;
+            line-height: 1.4;
+        }
+
+        button {
+            background: rgba(255, 255, 255, 0.95);
+            color: var(--bg-dark);
+            border: none;
+            padding: 14px 40px;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            width: 100%;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            background: #fff;
+            box-shadow: 0 10px 25px -5px rgba(255, 255, 255, 0.3);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .skip-hint {
+            margin-top: 10px;
+            font-size: 0.75rem;
+            color: #94a3b8;
+        }
+
+        .sound-toggle {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="bg-video-layer"></div>
+    <div class="overlay"></div>
+
+    <div class="container">
+        <button id="sound-btn" class="sound-toggle" title="Toggle Sound">🔊</button>
+
+        <h1>Time to Rest</h1>
+        <div class="subtitle">
+            Breathe with the galaxy...
+        </div>
+
+        <div class="timer-ring">
+            <div class="galaxy-container">
+                <div class="galaxy-spiral"></div>
+                <div class="galaxy-spiral"></div>
+                <!-- <div class="galaxy-core"></div> -->
+                <!-- Use multiple stars or a nebula core -->
+                <div class="galaxy-core"></div>
+
+                <div class="orbit-ring-1">
+                    <div class="planet planet-1"></div>
+                </div>
+                <div class="orbit-ring-2">
+                    <div class="planet planet-2"></div>
+                </div>
+            </div>
+
+            <svg class="timer-svg">
+                <circle class="timer-circle" cx="90" cy="90" r="80"></circle>
+                <circle class="timer-progress" id="progress-circle" cx="90" cy="90" r="80"></circle>
+            </svg>
+            <div class="timer-text" id="countdown">20</div>
+        </div>
+
+        <div class="instructions">
+            <div class="instruction-item">
+                <span class="icon">👀</span>
+                <span class="label">Look Away</span>
+                <span class="desc">Focus on something 20ft away to reset focus.</span>
+            </div>
+            <div class="instruction-item">
+                <span class="icon">🌌</span>
+                <span class="label">Breathe</span>
+                <span class="desc">Inhale and exhale slowly with the expanding universe.</span>
+            </div>
+        </div>
+
+        <div
+            style="margin-bottom: 20px; font-size: 0.85rem; color: #e2e8f0; font-style: italic; text-shadow: 0 1px 2px rgba(0,0,0,0.5);">
+            "Rest is the conversation between your body and soul."
+        </div>
+
+        <button id="close-btn" title="Skip the break and return to work immediately">Skip Break</button>
+        <div class="skip-hint">Resume work immediately if needed</div>
+    </div>
+
+    <script>
+        const countdownEl = document.getElementById('countdown');
+        const progressCircle = document.getElementById('progress-circle');
+        const closeBtn = document.getElementById('close-btn');
+        const circumference = 2 * Math.PI * 80; // circle radius is 80
+
+        progressCircle.style.strokeDasharray = `${circumference}`;
+
+        let timerHandle = null;
+
+        function setProgress(percent) {
+            const clamped = Math.max(0, Math.min(100, percent));
+            const offset = (1 - clamped / 100) * circumference;
+            // Note: If strokeDashoffset = circumference, line is invisible (empty). 
+            // If offset = 0, full. 
+            // We want it to decrease. 
+            // At 100% (start), offset should be 0.
+            // At 0% (end), offset should be circumference.
+            progressCircle.style.strokeDashoffset = offset;
+        }
+
+        function parseNumberParam(name) {
+            try {
+                const url = new URL(location.href);
+                const v = url.searchParams.get(name);
+                if (!v) return null;
+                const n = Number(v);
+                return Number.isFinite(n) ? n : null;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        async function getTargetFromStorage() {
+            return new Promise((resolve) => {
+                // Timeout logic to prevent hanging
+                const timeout = setTimeout(() => {
+                    resolve(null);
+                }, 500); // 500ms timeout
+
+                if (typeof chrome === 'undefined' || !chrome.storage) {
+                    clearTimeout(timeout);
+                    return resolve(null);
+                }
+
+                try {
+                    chrome.storage.local.get(['breakTarget', 'breakDuration'], (res) => {
+                        clearTimeout(timeout);
+                        if (chrome.runtime.lastError) return resolve(null);
+                        const t = res.breakTarget ? Number(res.breakTarget) : null;
+                        const d = res.breakDuration ? Number(res.breakDuration) : null;
+                        resolve({ target: t, duration: d });
+                    });
+                } catch (e) {
+                    clearTimeout(timeout);
+                    resolve(null);
+                }
+            });
+        }
+
+        async function initTimer() {
+            // 1) Prefer URL params
+            let target = parseNumberParam('target');
+            let duration = parseNumberParam('duration');
+
+            // 2) Fallback to persisted values if no URL param
+            if (!target) {
+                try {
+                    const stored = await getTargetFromStorage();
+                    if (stored && stored.target) {
+                        // Check if stored target is reasonable (not in the past by > duration)
+                        // If it's old (finished), start fresh?
+                        // Or if it's counting down, use it.
+                        if (stored.target > Date.now()) {
+                            target = stored.target;
+                            duration = duration || stored.duration;
+                        } else {
+                            // It's in the past. If it's *just* finished, we show 0.
+                            // If it's ancient, we probably want a fresh timer.
+                            // Let's assume restart for better UX in "stuck" cases
+                            target = null;
+                        }
+                    }
+                } catch (e) {
+                    console.error("Storage access error", e);
+                }
+            }
+
+            // 3) Final fallback: start a new timer
+            if (!target || !Number.isFinite(target)) {
+                // Default to 20s or provided duration
+                const fallbackDuration = (duration && Number.isFinite(duration)) ? duration : 20;
+                duration = fallbackDuration; // ensure duration is set
+                target = Date.now() + fallbackDuration * 1000;
+            } else {
+                // Determine duration from target if missing
+                if (!duration) {
+                    // guess based on remaining time? No, ideally we have duration. 
+                    // default to 20 for progress calc
+                    duration = 20;
+                }
+            }
+
+            // Ensure valid numbers
+            duration = Math.max(1, duration);
+            const totalMs = duration * 1000;
+            // If target is somehow super far in future, clamp or accept? Accept.
+
+            // Start the tick
+            if (timerHandle) clearInterval(timerHandle);
+
+            function tick() {
+                const now = Date.now();
+                const msLeft = Math.max(0, target - now);
+                const secLeft = Math.ceil(msLeft / 1000);
+
+                // UI
+                countdownEl.innerText = msLeft > 0 ? secLeft : '✓';
+
+                // Progress
+                // If we started with target = now + 20s, current progress is based on that.
+                // But we need 'total time' to calculate percentage.
+                // We use 'duration' passed in.
+
+                // Problem: If we resumed a timer midway, 'totalMs' should still be the FULL duration (e.g. 20s), 
+                // but 'msLeft' is 10s. Percent = 50%.
+                // This is correct.
+
+                // However, if target is artificially calculated as now + duration, percent starts at 100%. Correct.
+
+                let percent = (msLeft / totalMs) * 100;
+                // Cap to 100 (in case target is further out than duration implies, though unlikely)
+                percent = Math.min(100, Math.max(0, percent));
+
+                setProgress(percent);
+
+                if (msLeft <= 0) {
+                    clearInterval(timerHandle);
+                    timerHandle = null;
+                    completeBreak();
+                }
+            }
+
+            tick();
+            timerHandle = setInterval(tick, 100); // 100ms for smoother animation
+        }
+
+        function completeBreak() {
+            closeBtn.innerText = "I'm Recharged";
+            closeBtn.style.background = "#fff";
+            closeBtn.style.color = "#0ea5e9";
+            // Pulse effect
+            closeBtn.animate([
+                { transform: 'scale(1)' },
+                { transform: 'scale(1.05)' },
+                { transform: 'scale(1)' }
+            ], {
+                duration: 1000,
+                iterations: Infinity
+            });
+        }
+
+        // Close logic
+        closeBtn.addEventListener('click', () => {
+            // First try to close window
+            window.close();
+            // Then message background to be sure
+            if (typeof chrome !== 'undefined' && chrome.runtime) {
+                chrome.runtime.sendMessage({ type: "CLOSE_BREAK_PAGE" });
+            }
+        });
+
+        // Start
+        initTimer();
+
+    </script>
+</body>
+
+</html>

@@ -6,7 +6,10 @@
     "permissions": [
         "storage",
         "windows",
-        "offscreen"
+        "offscreen",
+        "alarms",
+        "notifications",
+        "tabs"
     ],
     "background": {
         "service_worker": "background.js"
@@ -28,7 +31,10 @@
             "resources": [
                 "face_landmarker.task",
                 "lib/*",
-                "lib/wasm/*"
+                "lib/wasm/*",
+                "break.html",
+                "deep_space.png",
+                "icon128.png"
             ],
             "matches": [
                 "<all_urls>"

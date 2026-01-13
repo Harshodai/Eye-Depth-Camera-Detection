@@ -39,6 +39,25 @@ const FACE_LOST_GRACE_MS = 1000;
     chrome.runtime.sendMessage({ type: "MONITOR_UPDATE", status: "LOOKING" });
 
     // Register Direct Message Listener for Slider
+
+    // Alert Sound Handling
+    // Actually, I should check if I have a sound file. If not, I can generate a beep or use a placeholder.
+    // For now, let's assume I need to create a simple beep using Web Audio API to avoid external dependencies.
+
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playBeep() {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(440, audioCtx.currentTime); // A4
+        gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        oscillator.start();
+        setTimeout(() => oscillator.stop(), 500); // 0.5s beep
+    }
+
     chrome.runtime.onMessage.addListener((msg) => {
         if (msg.type === "UPDATE_DELAY") {
             const val = parseInt(msg.value);
@@ -46,6 +65,8 @@ const FACE_LOST_GRACE_MS = 1000;
                 alertDelaySeconds = val;
                 originalLog("Slider Update:", val);
             }
+        } else if (msg.type === "PLAY_ALERT_SOUND") {
+            playBeep();
         }
     });
 
