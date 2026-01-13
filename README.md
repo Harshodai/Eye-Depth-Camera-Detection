@@ -89,3 +89,22 @@ $$ D = \frac{W \times F}{P} $$
 
 ## 🛡️ Privacy Policy
 **100% Local**. No images are captured. No data is stored. No biometric info is sent to any server. Your camera feed is used strictly for real-time calculation and discarded instantly.
+ 
+---
+
+## ??? Developer & Testing
+
+We enforce a strict **Regression Testing Policy** to prevent bugs.
+
+### How to Commit Changes
+Use the included safeguard.bat script instead of standard git commands.
+
+1.  **Double-click** safeguard.bat in the project folder.
+2.  It will automatically open the **Regression Test Suite** in your browser.
+3.  **Verify** all tests are GREEN ?.
+4.  Type y in the terminal to confirm.
+5.  Enter your commit message when prompted.
+6.  The script will automatically commit and push your changes.
+
+### Running Tests Manually
+Open chrome-extension/tests/runner.html in your browser at any time to check the health of the extension.
