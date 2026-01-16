@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Time to Blink</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --accent-glow: rgba(56, 189, 248, 0.5);
+            --accent-core: #38bdf8;
+            --glass-bg: rgba(30, 41, 59, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+            text-align: center;
+        }
+
+        .glow-container {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, rgba(56, 189, 248, 0.15) 0%, transparent 70%);
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        /* Animated Eye Container */
+        .eye-wrapper {
+            position: relative;
+            width: 140px;
+            height: 140px;
+            margin-bottom: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .eye-outer-ring {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 2px solid var(--accent-core);
+            opacity: 0.3;
+            animation: ring-pulse 3s infinite ease-in-out;
+        }
+
+        .eye-graphic {
+            width: 100px;
+            height: 60px;
+            background: transparent;
+            border: 4px solid var(--text-primary);
+            border-radius: 70% 15%;
+            /* Eye shape */
+            transform: rotate(45deg);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 20px var(--accent-glow);
+            overflow: hidden;
+            /* To clip the eyelid */
+        }
+
+        /* Correct rotation for the contents */
+        .eye-inner {
+            transform: rotate(-45deg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+        }
+
+        .pupil {
+            width: 24px;
+            height: 24px;
+            background: var(--accent-core);
+            border-radius: 50%;
+            box-shadow: 0 0 15px var(--accent-core);
+        }
+
+        /* Eyelid Animation */
+        .eyelid {
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: var(--bg-color);
+            transform: translateY(-100%) rotate(-45deg);
+            /* Start open */
+            animation: eyelid-blink 3s infinite ease-in-out;
+            transform-origin: center;
+        }
+
+        @keyframes eyelid-blink {
+
+            0%,
+            45%,
+            55%,
+            100% {
+                transform: translateY(-70%) rotate(45deg);
+            }
+
+            /* Open */
+            50% {
+                transform: translateY(0%) rotate(45deg);
+            }
+
+            /* Closed */
+        }
+
+        /* Simpler Scale Blink for the whole shape if eyelid is too complex to clip */
+        .eye-graphic-simple {
+            width: 100px;
+            height: 100px;
+            background: radial-gradient(circle at center, var(--text-primary) 0%, transparent 70%);
+            mask: radial-gradient(circle, black 60%, transparent 0);
+            /* CSS Eye shape tricky without SVG */
+            /* Using SVG is better for a premium feel */
+        }
+
+        @keyframes ring-pulse {
+
+            0%,
+            100% {
+                transform: scale(0.9);
+                opacity: 0.2;
+            }
+
+            50% {
+                transform: scale(1.1);
+                opacity: 0.5;
+            }
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin: 0;
+            font-weight: 700;
+            letter-spacing: -1px;
+            background: linear-gradient(to right, #fff, #cbd5e1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+
+        p.subtitle {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            margin: 0 0 40px 0;
+            font-weight: 400;
+        }
+
+        .status-pill {
+            background: var(--glass-bg);
+            padding: 10px 24px;
+            border-radius: 99px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .status-bar {
+            width: 80px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .status-fill {
+            height: 100%;
+            width: 100%;
+            background: var(--accent-core);
+            animation: loading-scan 2s infinite ease-in-out;
+            transform-origin: left;
+        }
+
+        @keyframes loading-scan {
+            0% {
+                transform: scaleX(0);
+                opacity: 0.5;
+            }
+
+            50% {
+                transform: scaleX(1);
+                opacity: 1;
+            }
+
+            100% {
+                transform: scaleX(0);
+                opacity: 0.5;
+                transform-origin: right;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="glow-container"></div>
+
+    <div class="eye-wrapper">
+        <div class="eye-outer-ring"></div>
+        <!-- SVG Eye for Crisp Rendering -->
+        <svg width="100" height="100" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"
+            style="filter: drop-shadow(0 0 10px var(--accent-glow));">
+            <g class="eye-svg">
+                <!-- Eye Shape -->
+                <path d="M50 25C25 25 10 50 10 50C10 50 25 75 50 75C75 75 90 50 90 50C90 50 75 25 50 25Z"
+                    stroke="#f8fafc" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
+                <!-- Iris/Pupil -->
+                <circle cx="50" cy="50" r="10" fill="#38bdf8" />
+                <!-- Animation: Eyelid -->
+                <path class="eyelid-mask"
+                    d="M10 50C10 50 25 25 50 25C75 25 90 50 90 50C90 50 75 75 50 75C25 75 10 50 10 50Z" fill="#0f172a"
+                    style="opacity: 0;" />
+            </g>
+        </svg>
+    </div>
+
+    <h1>Time to Blink</h1>
+    <p class="subtitle">Refresh your eyes for a moment</p>
+
+    <div class="status-pill">
+        <div class="status-bar">
+            <div class="status-fill"></div>
+        </div>
+        <span>Waiting for blink...</span>
+    </div>
+
+    <style>
+        .eye-svg {
+            animation: svg-blink 4s infinite cubic-bezier(0.11, 0, 0.5, 0);
+            transform-origin: center;
+        }
+
+        @keyframes svg-blink {
+
+            0%,
+            45%,
+            55%,
+            100% {
+                transform: scaleY(1);
+            }
+
+            50% {
+                transform: scaleY(0.1);
+            }
+        }
+    </style>
+
+    <script src="blink.js"></script>
+</body>
+
+</html>
+<style>
+    body {
+        margin: 0;
+        padding: 0;
+        background-color: #ea580c;
+        /* High Alert Orange */
+        color: white;
+        font-family: 'Segoe UI', system-ui, sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        overflow: hidden;
+        text-align: center;
+    }
+
+    /* Animated Eye */
+    .eye-graphic {
+        width: 120px;
+        height: 120px;
+        background: white;
+        border-radius: 50%;
+        /* Start circle */
+        position: relative;
+        margin-bottom: 30px;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+        animation: human-blink 3s infinite ease-in-out;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .pupil {
+        width: 40px;
+        height: 40px;
+        background: #0f172a;
+        border-radius: 50%;
+        border: 4px solid #38bdf8;
+        /* Blue accent */
+    }
+
+    @keyframes human-blink {
+
+        0%,
+        45%,
+        55%,
+        100% {
+            transform: scaleY(1);
+        }
+
+        50% {
+            transform: scaleY(0.1);
+        }
+    }
+
+    h1 {
+        font-size: 3.5rem;
+        margin: 0;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        animation: shake 5s infinite;
+    }
+
+    /* Subtle shake to grab attention periodically */
+    @keyframes shake {
+
+        0%,
+        90% {
+            transform: translateX(0);
+        }
+
+        92% {
+            transform: translateX(-5px);
+        }
+
+        94% {
+            transform: translateX(5px);
+        }
+
+        96% {
+            transform: translateX(-5px);
+        }
+
+        98% {
+            transform: translateX(5px);
+        }
+
+        100% {
+            transform: translateX(0);
+        }
+    }
+
+    p {
+        font-size: 1.4rem;
+        margin: 10px 0 30px;
+        font-weight: 500;
+        opacity: 0.95;
+        max-width: 80%;
+        line-height: 1.4;
+    }
+
+    .status-box {
+        background: rgba(0, 0, 0, 0.25);
+        padding: 12px 24px;
+        border-radius: 50px;
+        font-size: 1rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        backdrop-filter: blur(5px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .status-dot {
+        width: 10px;
+        height: 10px;
+        background: #4ade80;
+        /* Green */
+        border-radius: 50%;
+        box-shadow: 0 0 10px #4ade80;
+        animation: pulse-dot 1.5s infinite;
+    }
+
+    @keyframes pulse-dot {
+        0% {
+            opacity: 0.5;
+            transform: scale(1);
+        }
+
+        50% {
+            opacity: 1;
+            transform: scale(1.2);
+        }
+
+        100% {
+            opacity: 0.5;
+            transform: scale(1);
+        }
+    }
+</style>
+</head>
+
+<body>
+    <div class="eye-graphic">
+        <div class="pupil"></div>
+    </div>
+
+    <h1>Blink Now!</h1>
+    <p>Moisten your eyes to clear this window.</p>
+
+    <div class="status-box">
+        <div class="status-dot"></div>
+        <span>Waiting for blink...</span>
+    </div>
+
+    <script src="blink.js"></script>
+</body>
+
+</html>

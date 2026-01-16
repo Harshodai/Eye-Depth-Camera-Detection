@@ -27,6 +27,12 @@ function syncInitialState() {
                 alertSlider.value = val;
                 sliderValDisplay.innerText = val;
             }
+
+            if (res.blinkTimeout) {
+                const val = parseInt(res.blinkTimeout);
+                blinkSlider.value = val;
+                blinkValDisplay.innerText = val;
+            }
         });
     }
 }
@@ -40,6 +46,17 @@ alertSlider.addEventListener("input", (e) => {
     sliderValDisplay.innerText = val;
     chrome.storage.local.set({ alertDelay: val });
     chrome.runtime.sendMessage({ type: "UPDATE_DELAY", value: val });
+});
+
+// Blink Slider logic
+const blinkSlider = document.getElementById("blink-slider");
+const blinkValDisplay = document.getElementById("blink-val");
+
+blinkSlider.addEventListener("input", (e) => {
+    const val = e.target.value;
+    blinkValDisplay.innerText = val;
+    chrome.storage.local.set({ blinkTimeout: val });
+    chrome.runtime.sendMessage({ type: "UPDATE_BLINK_SETTINGS", value: val });
 });
 
 function updateToActiveUI() {

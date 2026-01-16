@@ -48,6 +48,10 @@
             <circle id="progress-circle"></circle>
         </svg>
         <button id="close-btn"></button>
+        <video id="webcam" style="display:none"></video>
+        <div id="logs"
+            style="white-space: pre-wrap; font-family: monospace; color: #aaa; margin-top: 20px; border-top: 1px solid #333; padding-top: 10px;">
+        </div>
     </div>
 
     <!-- Mocks Setup -->
@@ -121,10 +125,12 @@
     <!-- Load Source Files (Modules will expose to EyeGuard global) -->
     <script src="../break.js"></script>
     <script src="../background.js"></script>
+    <script src="../offscreen.js"></script>
 
     <!-- Load Specs -->
     <script src="spec_break.js"></script>
     <script src="spec_background.js"></script>
+    <script src="spec_offscreen.js"></script>
 
     <!-- Run -->
     <script>

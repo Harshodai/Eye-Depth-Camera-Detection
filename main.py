@@ -28,15 +28,50 @@ def load_config():
             "lock_time_seconds": config.getfloat("Settings", "lock_time_seconds", fallback=10),
             "target_width_cm": config.getfloat("Settings", "target_width_cm", fallback=6.3),
             "focal_length": config.getfloat("Settings", "focal_length", fallback=1100),
-            "monitoring_enabled": config.getboolean("Settings", "monitoring_enabled", fallback=True)
+            "monitoring_enabled": config.getboolean("Settings", "monitoring_enabled", fallback=True),
+            "blink_check_enabled": config.getboolean("Settings", "blink_check_enabled", fallback=True),
+            "blink_threshold_ear": config.getfloat("Settings", "blink_threshold_ear", fallback=0.25),
+            "max_blink_interval": config.getfloat("Settings", "max_blink_interval", fallback=15.0)
         }
     except Exception as e:
         print(f"Error reading config: {e}. Using defaults.")
-        return {k: float(v) if k != "monitoring_enabled" else True for k, v in defaults.items()}
+        # Ensure 'blink_check_enabled' and others have defaults if error occurs
+        defaults.update({
+            "blink_check_enabled": True, 
+            "blink_threshold_ear": 0.25, 
+            "max_blink_interval": 15.0
+        })
+        return {k: float(v) if k not in ["monitoring_enabled", "blink_check_enabled"] else True for k, v in defaults.items()}
 
 def lock_screen():
     print("Locking screen due to proximity violation...")
     ctypes.windll.user32.LockWorkStation()
+
+def calculate_ear(landmarks, eye_indices, w, h):
+    """
+    Calculate Eye Aspect Ratio (EAR) for a given eye.
+    EAR = (||p2-p6|| + ||p3-p5||) / (2 * ||p1-p4||)
+    """
+    # Extract coordinates
+    coords = []
+    for idx in eye_indices:
+        # Landmarks are normalized [0,1], convert to pixel
+        coords.append(np.array([landmarks[idx].x * w, landmarks[idx].y * h]))
+    
+    # Vertical distances
+    # p2 (1) - p6 (5)
+    d_v1 = np.linalg.norm(coords[1] - coords[5])
+    # p3 (2) - p5 (4)
+    d_v2 = np.linalg.norm(coords[2] - coords[4])
+    
+    # Horizontal distance
+    # p1 (0) - p4 (3)
+    d_h = np.linalg.norm(coords[0] - coords[3])
+    
+    if d_h == 0: return 0.0
+    
+    ear = (d_v1 + d_v2) / (2.0 * d_h)
+    return ear
 
 def main():
     config = load_config()
@@ -55,15 +90,30 @@ def main():
     SAFE_DISTANCE_CM = safe_distance_feet * 30.48
     LOCK_TIME_SECONDS = config.get("lock_time_seconds", 10)
     
+    # Blink Config
+    BLINK_CHECK = config.get("blink_check_enabled", True)
+    EAR_THRESHOLD = config.get("blink_threshold_ear", 0.25)
+    MAX_BLINK_INTERVAL = config.get("max_blink_interval", 15.0)
+    
     last_distances = []
     SMOOTHING_WINDOW = 5
     
     # Timer variables
     violation_start_time = None
+    last_blink_time = time.time()
+    
+    # Eye Landmarks (MediaPipe 468 indices)
+    # Right Eye (viewer's left? No, subject's right. MediaPipe mirrors?)
+    # Let's map robust logic: 
+    # Left Eye (Subject's Left): 33, 160, 158, 133, 153, 144
+    # Right Eye (Subject's Right): 362, 385, 387, 263, 373, 380
+    LEFT_EYE_IDXS = [33, 160, 158, 133, 153, 144] 
+    RIGHT_EYE_IDXS = [362, 385, 387, 263, 373, 380]
 
     print("Starting Eye Distance Monitor...")
     print(f"Safe Distance: {safe_distance_feet} ft")
-    print(f"Lock Timeout: {LOCK_TIME_SECONDS} seconds")
+    if BLINK_CHECK:
+        print(f"Blink Monitor: ON (Alert every {MAX_BLINK_INTERVAL}s)")
     print("Press 'q' to quit.")
 
     while cap.isOpened():
@@ -71,8 +121,10 @@ def main():
         if not success:
             print("Ignoring empty camera frame.")
             continue
+            
+        h, w, _ = image.shape
 
-        distance, left_eye, right_eye = estimator.get_distance(image)
+        distance, left_eye, right_eye, landmarks = estimator.get_distance(image)
 
         if distance:
             # Simple moving average for smoothing
@@ -109,6 +161,32 @@ def main():
                 color = (0, 255, 0) # Green
                 status_text = "Good distance"
             
+            # Blink Detection Logic
+            blink_color = (255, 255, 255)
+            blink_text = ""
+            
+            if BLINK_CHECK and landmarks:
+                # Calculate EAR
+                left_ear = calculate_ear(landmarks, LEFT_EYE_IDXS, w, h)
+                right_ear = calculate_ear(landmarks, RIGHT_EYE_IDXS, w, h)
+                avg_ear = (left_ear + right_ear) / 2.0
+                
+                # Check for blink
+                if avg_ear < EAR_THRESHOLD:
+                    last_blink_time = time.time() # Reset timer
+                    blink_color = (0, 255, 0) # Green flash indicating blink registered
+                
+                # Check for dry eye (no blink)
+                time_since_blink = time.time() - last_blink_time
+                if time_since_blink > MAX_BLINK_INTERVAL:
+                    blink_text = "BLINK NOW!"
+                    cv2.putText(image, blink_text, (w//2 - 100, h//2), 
+                                cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 165, 255), 3) # Orange
+                    cv2.rectangle(image, (0,0), (w,h), (0, 165, 255), 10) # Orange Border
+                
+                # Debug info (optional, helps user trust the system)
+                # cv2.putText(image, f"EAR: {avg_ear:.2f}", (30, 150), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,255,0), 1)
+
             # Overlay info
             cv2.putText(image, f"Distance: {avg_distance:.1f} cm ({dist_ft:.1f} ft)", (30, 50), 
                         cv2.FONT_HERSHEY_SIMPLEX, 0.8, color, 2)
@@ -116,6 +194,11 @@ def main():
             if is_too_close:
                  cv2.putText(image, status_text, (30, 90), 
                         cv2.FONT_HERSHEY_SIMPLEX, 0.8, color, 2)
+            
+            if BLINK_CHECK:
+                 time_since_last = time.time() - last_blink_time
+                 cv2.putText(image, f"Last Blink: {time_since_last:.1f}s", (30, 120), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (200, 200, 200), 1)
 
         else:
             # If face lost, reset timer? Or keep it? 

@@ -8,7 +8,7 @@ start "" "c:\Users\khars\PycharmProjects\Eye-Depth-Camera-Detection\chrome-exten
 
 echo.
 echo CHECK THE BROWSER WINDOW!
-echo Are all tests showing as GREEN (Passed)?
+echo Are all 14 Regression Tests showing as GREEN (Passed) + Manual Verify?
 echo.
 set /p "choice=Enter 'y' if PASS, 'n' if FAIL: "
 

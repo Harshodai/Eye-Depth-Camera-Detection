@@ -3,13 +3,30 @@
 window.tests = [];
 window.results = { passed: 0, failed: 0 };
 
+let currentBeforeEach = null;
+let currentAfterEach = null;
+
+function beforeEach(fn) { currentBeforeEach = fn; }
+function afterEach(fn) { currentAfterEach = fn; }
+
 function describe(name, fn) {
+    currentBeforeEach = null;
+    currentAfterEach = null;
     console.log(`%c${name}`, 'font-weight: bold; font-size: 14px; color: #38bdf8;');
     fn();
 }
 
 function it(name, fn) {
-    window.tests.push({ name, fn });
+    const setup = currentBeforeEach;
+    const teardown = currentAfterEach;
+    window.tests.push({
+        name,
+        fn: async () => {
+            if (setup) await setup();
+            await fn();
+            if (teardown) await teardown();
+        }
+    });
 }
 
 function expect(actual) {
@@ -25,6 +42,12 @@ function expect(actual) {
         },
         toBeCloseTo: (expected, delta = 100) => {
             if (Math.abs(actual - expected) > delta) throw new Error(`Expected ${expected} +/- ${delta} but got ${actual}`);
+        },
+        toBeLessThan: (limit) => {
+            if (!(actual < limit)) throw new Error(`Expected ${actual} to be less than ${limit}`);
+        },
+        toBeGreaterThan: (limit) => {
+            if (!(actual > limit)) throw new Error(`Expected ${actual} to be greater than ${limit}`);
         }
     };
 }

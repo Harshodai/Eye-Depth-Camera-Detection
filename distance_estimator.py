@@ -71,6 +71,6 @@ class DistanceEstimator:
             # Calculate depth
             distance_cm = (self.known_width * self.focal_length) / pixel_distance
             
-            return distance_cm, (int(left_pt[0]), int(left_pt[1])), (int(right_pt[0]), int(right_pt[1]))
+            return distance_cm, (int(left_pt[0]), int(left_pt[1])), (int(right_pt[0]), int(right_pt[1])), face_landmarks
                 
-        return None, None, None
+        return None, None, None, None

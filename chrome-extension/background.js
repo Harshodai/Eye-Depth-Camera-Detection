@@ -1,6 +1,10 @@
 // background.js - Manages the offscreen document for persistent monitoring
 
 let isOffscreenCreated = false;
+let blinkWindowId = null; // Track the "Blink Now" popup
+let isCreatingBlinkWindow = false; // Prevention lock
+let lastCreationAttemptTime = 0; // Safety for the lock
+let pendingBlinkWindowClose = false; // Cancellation lock
 
 // --- ROBUST MESSAGE HANDLING (Consolidated) ---
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -17,12 +21,88 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 chrome.windows.update(win.id, { state: "minimized" });
             }
         });
-    } else if (request.type === "UPDATE_BREAK_SETTINGS") {
-        handleBreakSettingsUpdate(request.settings);
     } else if (request.type === "CLOSE_BREAK_PAGE") {
         // Robust closing logic
         handleCloseBreakPage(sender, sendResponse);
         return true; // Keep channel open for async response
+    } else if (request.type === "WARN_BLINK") {
+        // Visual Warning
+        chrome.action.setBadgeText({ text: "BLINK" });
+        chrome.action.setBadgeBackgroundColor({ color: "#FF0000" });
+    } else if (request.type === "ENFORCE_BLINK") {
+        const now = Date.now();
+        // Safety: If lock is stuck for > 4 seconds, force break it
+        if (isCreatingBlinkWindow && (now - lastCreationAttemptTime > 4000)) {
+            console.warn("Force breaking stuck window creation lock.");
+            isCreatingBlinkWindow = false;
+        }
+
+        if (isCreatingBlinkWindow) return; // Busy
+
+        const tryCreate = () => {
+            if (blinkWindowId !== null) return;
+
+            isCreatingBlinkWindow = true;
+            lastCreationAttemptTime = Date.now();
+            pendingBlinkWindowClose = false;
+
+            // Center on screen (assuming 1920x1080 typical, or browser centers)
+            // Providing both 'left' and 'top' is safer.
+            chrome.windows.create({
+                url: "blink.html",
+                type: "popup",
+                focused: true,
+                state: "maximized"
+            }, (win) => {
+                isCreatingBlinkWindow = false;
+
+                if (chrome.runtime.lastError || !win) {
+                    console.error("Popup create failed:", chrome.runtime.lastError);
+                    return;
+                }
+
+                // Check for cancellation race
+                if (pendingBlinkWindowClose) {
+                    console.log("Popup creation canceled by reset.");
+                    chrome.windows.remove(win.id);
+                    pendingBlinkWindowClose = false;
+                    return;
+                }
+
+                blinkWindowId = win.id;
+            });
+        };
+
+        if (blinkWindowId !== null) {
+            // Verify existence
+            chrome.windows.get(blinkWindowId, (win) => {
+                if (chrome.runtime.lastError || !win) {
+                    // Stale ID, clear and create
+                    blinkWindowId = null;
+                    tryCreate();
+                } else {
+                    // Exists, focus it
+                    chrome.windows.update(blinkWindowId, { focused: true }).catch(() => { });
+                }
+            });
+        } else {
+            tryCreate();
+        }
+
+    } else if (request.type === "RESET_BLINK") {
+        chrome.action.setBadgeText({ text: "" });
+        // Close the Blink Popup if it's open
+        if (blinkWindowId !== null) {
+            chrome.windows.remove(blinkWindowId).catch(err => { }); // Catch error if already closed
+            blinkWindowId = null;
+        }
+    }
+});
+
+// Clean up blinkWindowId if closed manually
+chrome.windows.onRemoved.addListener((windowId) => {
+    if (windowId === blinkWindowId) {
+        blinkWindowId = null;
     }
 });
 

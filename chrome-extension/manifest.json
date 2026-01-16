@@ -33,6 +33,8 @@
                 "lib/*",
                 "lib/wasm/*",
                 "break.html",
+                "blink.html",
+                "blink.js",
                 "milky_way.png",
                 "icon128.png"
             ],

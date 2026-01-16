@@ -11,10 +11,12 @@ EyeVision Guard ("we", "our", or "us") is committed to protecting your privacy. 
 The extension processes the following data exclusively within your browser's memory (Client-Side):
 *   **Camera Stream:** Your webcam feed is analyzed in real-time by the MediaPipe AI model running locally in your browser to detect face landmarks. This video stream is **never** recorded, saved to disk, or transmitted to any server.
 *   **Distance Metrics:** The calculated distance between your eyes and the screen is used instantly to trigger alerts and is then discarded.
+*   **Blink Rate:** Your eye aspect ratio (EAR) is analyzed locally to detect blinks. This data is ephemeral and never stored.
 
 ## 3. Data Storage (Local Only)
 We use the Chrome Storage API (`chrome.storage.local`) solely to save your configuration preferences:
 *   **Alert Delay:** The timer preference (e.g., 5 seconds, 15 seconds).
+*   **Blink Settings:** Your preferred blink timeout threshold.
 *   **Monitoring State:** Whether the extension is currently ON or OFF.
 
 This data stays on your machine and is not synced to your Google Account or our servers.

@@ -14,6 +14,7 @@ The most popular way to use EyeVision Guard. It runs entirely in your browser us
 
 ### Features
 - **Smart Galaxy Break Timer**: Implements the 20-20-20 rule with a breathing "Cosmic Drift" galaxy animation to help you relax.
+- **Blink Monitor**: Analyzes your blink rate using AI and reminds you to blink if you stare too long (preventing dry eyes).
 - **Privacy First**: "No Data is Stored anywhere" - All AI processing happens locally on your device.
 - **Background Protection**: Continues monitoring even when the popup is closed.
 - **Customizable Delay**: Set an alert delay from 5s to 15s using a compact horizontal slider.
@@ -31,7 +32,7 @@ The most popular way to use EyeVision Guard. It runs entirely in your browser us
 A real-time desktop application for system-wide protection.
 
 ### Features
-- **Auto-Lock**: Locks your computer (Windows+L) if you remain too close.
+- **Auto-Minimize**: Automatically minimizes the browser if you stay too close for too long.
 - **Configurable**: Fully tweakable settings via `config.ini`.
 - **MediaPipe Engine**: Uses the same high-accuracy iris tracking engine.
 
@@ -57,15 +58,20 @@ Follow these manual test cases to verify the system is working perfectly.
 - **Step**: Click **Start Protection** and look at your screen.
 - **Check**: The status should switch to "**Good**" (Green) and show your real-time distance in centimeters.
 
-### Test Case 4: Alert Sync
+### Test Case 4: Alert Sync (Distance)
 - **Step**: Set slider to **5s**. Lean in close (< 76cm).
 - **Check**: Text changes to "**Please move back (5s)**" and counts down. Move back; it should reset to "**Good**" immediately.
 
-### Test Case 5: Breach & Action
+### Test Case 5: Blink Detection
+- **Step**: Set Blink Timeout to **5s** in the popup.
+- **Step**: Stare at the camera without blinking for > 5 seconds.
+- **Check**: A "Blink Now!" popup appears with a visual eye animation and an audio queue.
+
+### Test Case 6: Breach & Action
 - **Step**: Stay at a close distance until the countdown reaches **0s**.
 - **Check**: The Chrome window (Extension) or PC (Python) should automatically perform the protection action (Minimize/Lock).
 
-### Test Case 6: 20-20-20 Break & Galaxy Timer
+### Test Case 7: 20-20-20 Break & Galaxy Timer
 - **Step**: Wait for the 20-minute timer (or manually trigger via Developer Console).
 - **Check**: A full-screen "Time to Rest" page opens with a rotating 3D Milky Way background.
 - **Step**: Wait for the 20-second breathing countdown.
@@ -101,7 +107,7 @@ Use the included safeguard.bat script instead of standard git commands.
 
 1.  **Double-click** safeguard.bat in the project folder.
 2.  It will automatically open the **Regression Test Suite** in your browser.
-3.  **Verify** all tests are GREEN ?.
+3.  **Verify** 14/14 tests are GREEN ✅.
 4.  Type y in the terminal to confirm.
 5.  Enter your commit message when prompted.
 6.  The script will automatically commit and push your changes.
