@@ -39,7 +39,7 @@ const FACE_LOST_GRACE_MS = 1000;
 
 // --- AUDIO HELPER (Global Scope) ---
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-function playBeep() {
+let playBeep = function () {
     if (audioCtx.state === 'suspended') audioCtx.resume();
     const oscillator = audioCtx.createOscillator();
     const gainNode = audioCtx.createGain();
@@ -50,7 +50,7 @@ function playBeep() {
     gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
     oscillator.start();
     setTimeout(() => oscillator.stop(), 500); // 0.5s beep
-}
+};
 
 (async () => {
     // 1. IMMEDIATE STARTUP ACTIONS
@@ -340,7 +340,8 @@ if (typeof window !== 'undefined') {    // Expose for testing
             setAlertDelay: (d) => { alertDelaySeconds = d; },
             getAlertDelay: () => alertDelaySeconds,
             setFaceLandmarker: (fl) => { faceLandmarker = fl; },
-            setLastFaceDetectedTime: (t) => { lastFaceDetectedTime = t; }
+            setLastFaceDetectedTime: (t) => { lastFaceDetectedTime = t; },
+            setPlayBeep: (fn) => { playBeep = fn; }
         };
     }
 }

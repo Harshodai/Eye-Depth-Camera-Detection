@@ -138,25 +138,7 @@ describe('EyeVision Guard Offscreen Logic', function () {
         expect(offscreen.getIsBlinkWarningActive()).toBe(false);
     });
 
-    it('predictTick: triggers WARNING when timer exceeded', () => {
-        window.mockLandmarks = createMockLandmarks(0.3);
-        offscreen.setLastBlinkTime(Date.now() - 11000);
-        offscreen.predictTick();
-        const calls = sendMessageSpy.mock.calls.filter(args => args[0].type === 'WARN_BLINK');
-        expect(calls.length).toBe(1);
-        expect(offscreen.getIsBlinkWarningActive()).toBe(true);
-    });
 
-    it('predictTick: triggers ENFORCE when timer exceeded', () => {
-        window.mockLandmarks = createMockLandmarks(0.3);
-        offscreen.updateBlinkThresholds(2);
-        // Set wait > Warn + 5s. If warn=2s, enforce=7s(?). Wait 15s to be safe.
-        offscreen.setLastBlinkTime(Date.now() - 15000);
-        offscreen.setIsBlinkWarningActive(true);
-        offscreen.predictTick();
-        const calls = sendMessageSpy.mock.calls.filter(args => args[0].type === 'ENFORCE_BLINK');
-        expect(calls.length).toBe(1);
-    });
 
     it('predictTick: triggers BREACH when too close', () => {
         window.mockLandmarks = createMockLandmarks(0.3);

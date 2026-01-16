@@ -134,8 +134,35 @@
 
     <!-- Run -->
     <script>
+        // Redirect console to #logs
+        const logDiv = document.getElementById('logs');
+        const makeLogger = (type) => (...args) => {
+             const line = document.createElement('div');
+             line.textContent = `[${type}] ${args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ')}`;
+             line.style.color = type === 'error' ? '#f87171' : '#aaa';
+             logDiv.appendChild(line);
+             // Also call original? Maybe not to avoid noise in browser tool output if I capture DOM.
+        };
+        // window.console.log = makeLogger('LOG');
+        // window.console.error = makeLogger('ERROR'); 
+        // We need to override the window consle BEFORE offscreen loads? No, offscreen saves original.
+        // Offscreen saves originalLog = console.log.
+        // So we should see if we can hook into offscreen's logging or just use the browser tool to capture console?
+        // Actually browser tool doesn't capture console. It captures DOM.
+        // So I must redirect.
+        // But offscreen.js saves originalLog early.
+        // So I need to put this script BEFORE offscreen.js script tag.
+        
+        // I will just add this to the END for now, which captures logs from TESTS (which use window.console).
+        // Offscreen uses 'originalLog' which is the REAL console.
+        // BUT offscreen.js says: console.log = ... filter ... originalLog.
+        // If I override console.log check this out:
+        // const originalLog = console.log; (In offscreen.js)
+        // If I override it BEFORE offscreen.js, originalLog becomes my logger.
+        // YES.
+    </script>
+    <script>
         window.onload = runTests;
     </script>
 </body>
-
 </html>
